@@ -49,9 +49,13 @@ PROJECT_DIRECTORY = ""
 # --- Rules --- # 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#onstart-onsuccess-and-onerror-handlers
 onsuccess:
-    workflow_system = WORKFLOW_SYSTEM,
-    config_path = CONFIG_PATH,
-    output_path = OUTPUT_PATH,
+    workflow_system = WORKFLOW_SYSTEM
+    config_path = CONFIG_PATH
+    output_path = OUTPUT_PATH
+    project_directory = PROJECT_DIRECTORY
+    out = OUTPUT_PATH + "logs/make_report.out"
+    err = OUTPUT_PATH + "logs/make_report.err"
+    R_file = OUTPUT_PATH + "Rdata/latest_rule.Rds"
         
     # Ensure the output directory exists.
     os.makedirs(output_path[0] + "config/", exist_ok=True)
@@ -82,76 +86,8 @@ onsuccess:
     else:
         print("No changes detected in configuration YAML file. Skipping copy.")
 
-# rule export_env:
-#     input:
-#         CONFIG_PATH # lambda wildcards: configfile  # Dynamically use the configfile provided by the user.
-#     output:
-#          temp(OUTPUT_PATH + "config/.export_env_done")
-#         # directory(OUTPUT_PATH  + "config"),
-#         # env_file = OUTPUT_PATH + "config/conda.env"
-#     params:
-#         workflow_system = WORKFLOW_SYSTEM,
-#         config_path = CONFIG_PATH,
-#         output_path = OUTPUT_PATH,
-#         config_file = CONFIG_PATH + "config.yaml"
-#     priority: 100  # Ensure this runs before other rules.
-#     run:
-#         # Ensure the output directory exists.
-#         os.makedirs(output[0], exist_ok=True)
-
-#         # Export the current conda environment.
-#         os.system("conda list --export > " + output_path + "config/conda.env")
-
-#         # Extract the base name of the input config file (without extension.)
-#         config_name, config_ext = os.path.splitext(os.path.basename(input[0]))
-
-#         # Get the current timestamp.
-#         timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-
-#         # Path to the new file.
-#         new_file = os.path.join(output[0], f"{config_name}_{timestamp}{config_ext}")
-
-#         # Find the latest file in the `config` directory that matches this config base name
-#         existing_files = sorted(
-#             [f for f in os.listdir(output[0]) if f.startswith(config_name) and f.endswith(config_ext)]
-#         )
-#         latest_file = os.path.join(output[0], existing_files[-1]) if existing_files else None
-
-#         # Compare the current YAML file with the latest file in the folder.
-#         if not latest_file or not filecmp.cmp(input[0], latest_file, shallow=False):
-#             # Copy the file if there are differences or no previous file exists.
-#             shutil.copy(input[0], new_file)
-#             print(f"Copied {input[0]} to {new_file}")
-#         else:
-#             print("No changes detected in config.yaml. Skipping copy.")
-
-#         # Mark the rule as done for this session.
-#         with open(output[0], "w") as f:
-#             f.write("Done.")
-
-# rule make_report:
-#     input: 
-#         R_file_qc_metrics = OUTPUT_PATH + "Rdata/qc_metrics.rds"
-#     output:
-#         # test_file = OUTPUT_PATH + "pubs/test.rds"
-#         report_file = OUTPUT_PATH + "pubs/report.html"
-#     params:
-#         workflow_system = WORKFLOW_SYSTEM,
-#         script = "src/make_report.R",
-#         output_path = OUTPUT_PATH,
-#         current_module = "make_report",
-#         config_path = CONFIG_PATH,
-#         project_directory = PROJECT_DIRECTORY,
-#         report_template_path = "ext/report_template.Rmd",
-#         report_output_path = OUTPUT_PATH + "pubs/report.html"
-#     log:
-#         out = OUTPUT_PATH + "logs/make_report.out",
-#         err = OUTPUT_PATH + "logs/make_report.err" 
-#     shell:
-#         """
-#         mkdir -p {params.output_path}/pubs
-#         Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file_qc_metrics} {params.project_directory} 1> {log.out} 2> {log.err}
-#         """
+    # Create the report. 
+    os.system("Rscript make_report.R " + config_path[0] + " " + workflow_system + " " + "make_report" + " " + output_path[0] + " " + R_file + " " + project_directory + " 1> " + out + " 2> " + err)
 
 rule normalization:
     input:
@@ -225,3 +161,76 @@ rule test:
         err = OUTPUT_PATH + "logs/test.err" 
     shell:
         "Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} 1> {log.out} 2> {log.err}"
+
+# !--- DEPRECATED RULES WHICH HAVE BEEN INCORPORATED INTO onsuccess RULE ---! 
+# rule export_env:
+#     input:
+#         CONFIG_PATH # lambda wildcards: configfile  # Dynamically use the configfile provided by the user.
+#     output:
+#          temp(OUTPUT_PATH + "config/.export_env_done")
+#         # directory(OUTPUT_PATH  + "config"),
+#         # env_file = OUTPUT_PATH + "config/conda.env"
+#     params:
+#         workflow_system = WORKFLOW_SYSTEM,
+#         config_path = CONFIG_PATH,
+#         output_path = OUTPUT_PATH,
+#         config_file = CONFIG_PATH + "config.yaml"
+#     priority: 100  # Ensure this runs before other rules.
+#     run:
+#         # Ensure the output directory exists.
+#         os.makedirs(output[0], exist_ok=True)
+
+#         # Export the current conda environment.
+#         os.system("conda list --export > " + output_path + "config/conda.env")
+
+#         # Extract the base name of the input config file (without extension.)
+#         config_name, config_ext = os.path.splitext(os.path.basename(input[0]))
+
+#         # Get the current timestamp.
+#         timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+#         # Path to the new file.
+#         new_file = os.path.join(output[0], f"{config_name}_{timestamp}{config_ext}")
+
+#         # Find the latest file in the `config` directory that matches this config base name
+#         existing_files = sorted(
+#             [f for f in os.listdir(output[0]) if f.startswith(config_name) and f.endswith(config_ext)]
+#         )
+#         latest_file = os.path.join(output[0], existing_files[-1]) if existing_files else None
+
+#         # Compare the current YAML file with the latest file in the folder.
+#         if not latest_file or not filecmp.cmp(input[0], latest_file, shallow=False):
+#             # Copy the file if there are differences or no previous file exists.
+#             shutil.copy(input[0], new_file)
+#             print(f"Copied {input[0]} to {new_file}")
+#         else:
+#             print("No changes detected in config.yaml. Skipping copy.")
+
+#         # Mark the rule as done for this session.
+#         with open(output[0], "w") as f:
+#             f.write("Done.")
+
+# rule make_report:
+#     input: 
+#         R_file_qc_metrics = OUTPUT_PATH + "Rdata/qc_metrics.rds"
+#     output:
+#         # test_file = OUTPUT_PATH + "pubs/test.rds"
+#         report_file = OUTPUT_PATH + "pubs/report.html"
+#     params:
+#         workflow_system = WORKFLOW_SYSTEM,
+#         script = "src/make_report.R",
+#         output_path = OUTPUT_PATH,
+#         current_module = "make_report",
+#         config_path = CONFIG_PATH,
+#         project_directory = PROJECT_DIRECTORY,
+#         report_template_path = "ext/report_template.Rmd",
+#         report_output_path = OUTPUT_PATH + "pubs/report.html"
+#     log:
+#         out = OUTPUT_PATH + "logs/make_report.out",
+#         err = OUTPUT_PATH + "logs/make_report.err" 
+#     shell:
+#         """
+#         mkdir -p {params.output_path}/pubs
+#         Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file_qc_metrics} {params.project_directory} 1> {log.out} 2> {log.err}
+#         """
+# !--- END DEPRECATED RULES ---! 
