@@ -353,5 +353,6 @@ stats_df <- calculate_qc_stats(seu.obj@meta.data, total_cells_post_qc = nrow(seu
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 saveRDS(stats_df, paste0(output_dir_rdata, "qc_metrics.rds"))
-saveRDS(seu.obj.filt, paste0(output_dir_rdata, "seuratObject_filtered.rds"))
+saveRDS(seu.obj@meta.data, paste0(output_dir_rdata, "flagged_metadata_raw.rds")) # Raw metadata but with flags.
+saveRDS(seu.obj.filt, paste0(output_dir_rdata, "seuratObject_filtered.rds")) # Filtered data. 
 saveRDS(neg_probes_filt, paste0(output_dir_rdata, "neg-probes_filtered.rds"))
