@@ -190,6 +190,8 @@ bac_counts <- counts %>% .[, intersect(colnames(.), bacterial_probes)]
 if(length(intersect(colnames(counts), bacterial_probes)) < 1) message("Warning: no bacterial counts.")
   
 # Reduce counts matrix to only genes:
+# But first, make a copy of the colnames of the original counts matrix.
+old_counts_colnames <- colnames(counts)
 message("Reducing counts matrix to only genes.")
 counts <- counts[, !base::grepl("Negative", colnames(counts)) & 
                    !base::grepl("SystemControl", colnames(counts)) & 
@@ -200,7 +202,7 @@ message("Building new Seurat object.")
 seu.obj <- CreateSeuratObject(counts = t(counts), assay = 'RNA')
 seu.obj[["negprobes"]] <- CreateAssayObject(counts = t(neg_counts)) # https://rdrr.io/github/igordot/scooter/src/R/import.R, add_seurat_assay
 # Check if there are any bacterial probes before creating a new assay object for it.
-if(length(intersect(colnames(counts), bacterial_probes)) > 0) seu.obj[["bacprobes"]] <- CreateAssayObject(counts = t(bac_counts))
+if(length(intersect(old_counts_colnames, bacterial_probes)) > 0) seu.obj[["bacprobes"]] <- CreateAssayObject(counts = t(bac_counts))
 seu.obj@meta.data <- metadata
 if(identical(Cells(seu.obj), seu.obj@meta.data$updated_cell_id)) {rownames(seu.obj@meta.data) <- seu.obj@meta.data$updated_cell_id} else {warning("Cells do not match updated_cell_id in metadata. Please correct this.")} 
 
@@ -212,9 +214,11 @@ if(identical(Cells(seu.obj), seu.obj@meta.data$updated_cell_id)) {rownames(seu.o
 
 message("Exporting Seurat object to RDS file and cleaning up memory.")
 
-# Save.
+# Save Seurat object.
 saveRDS(seu.obj, paste0(output_dir_rdata, "seuratObject_raw.rds"))
+# Update latest module completed.
+updateLatestModule(output_dir_rdata, current_module)
 
 # Clean up.
-rm(counts, count_list, metadata, metadata_list)
+rm(counts, old_counts_colnames, count_list, metadata, metadata_list)
 gc()
