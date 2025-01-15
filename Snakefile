@@ -193,6 +193,7 @@ rule qc:
     shell:
         """
         Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file} {params.project_directory} 1> {log.out} 2> {log.err}
+        cp src/qc_shiny_app.R {params.output_path}
         """
 
 rule data_import_cleaning:
