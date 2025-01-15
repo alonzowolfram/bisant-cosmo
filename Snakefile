@@ -49,13 +49,13 @@ PROJECT_DIRECTORY = ""
 # --- Rules --- # 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#onstart-onsuccess-and-onerror-handlers
 onsuccess:
-    workflow_system = WORKFLOW_SYSTEM
-    config_path = CONFIG_PATH
-    output_path = OUTPUT_PATH
-    project_directory = PROJECT_DIRECTORY
-    out = OUTPUT_PATH + "logs/make_report.out"
-    err = OUTPUT_PATH + "logs/make_report.err"
-    R_file = OUTPUT_PATH + "Rdata/latest_rule.Rds"
+    workflow_system = WORKFLOW_SYSTEM,
+    config_path = CONFIG_PATH,
+    output_path = OUTPUT_PATH,
+    project_directory = PROJECT_DIRECTORY,
+    out = output_path[0] + "logs/make_report.out",
+    err = output_path[0] + "logs/make_report.err",
+    R_file = output_path[0] + "Rdata/latest_rule.Rds",
         
     # Ensure the output directory exists.
     os.makedirs(output_path[0] + "config/", exist_ok=True)
@@ -87,7 +87,7 @@ onsuccess:
         print("No changes detected in configuration YAML file. Skipping copy.")
 
     # Create the report. 
-    os.system("Rscript make_report.R " + config_path[0] + " " + workflow_system + " " + "make_report" + " " + output_path[0] + " " + R_file + " " + project_directory + " 1> " + out + " 2> " + err)
+    os.system("Rscript make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
 
 rule normalization:
     input:
@@ -131,6 +131,23 @@ rule qc:
         Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file} {params.project_directory} 1> {log.out} 2> {log.err}
         cp src/qc_shiny_app.R {params.output_path}
         """
+
+# rule data_cleaning:
+#     input:
+#         R_file = OUTPUT_PATH + "Rdata/seuratObject_raw.rds"
+#     output:
+#         R_file = OUTPUT_PATH + "Rdata/seuratObject_cleaned.rds"
+#     params:
+#         workflow_system = WORKFLOW_SYSTEM,
+#         script = "src/data_cleaning.R",
+#         output_path = OUTPUT_PATH,
+#         current_module = "data_cleaning",
+#         config_path = CONFIG_PATH
+#     log:
+#         out = OUTPUT_PATH + "logs/data-cleaning.out",
+#         err = OUTPUT_PATH + "logs/data-cleaning.err" 
+#     shell:
+#         "Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} 1> {log.out} 2> {log.err}"
 
 rule data_import_cleaning:
     output:
