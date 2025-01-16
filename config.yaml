@@ -1,0 +1,538 @@
+# =================================================================================================
+#     Project settings
+# =================================================================================================
+# Project variables.
+project:
+
+  # ----------------------------------------------------------------------
+  #     Meta-variables
+  # ----------------------------------------------------------------------
+  # Variables such as the project name.
+  meta: 
+
+    # [Optional] The name of the project. 
+    # You can name it anything you'd like, but we recommend a descriptive name including
+    # a project identifier, if it has one. 
+    # If you provide a project name and/or a run name and not an output directory (output_dir, below),
+    # the pipeline will use the project name in building an output directory:
+    # [{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}
+    project_name:
+
+    # [Optional] A name for this run.
+    # You can name it anything you'd like. 
+    # For example, if you're just running the QC, maybe name it
+    # "QC" or something like that.
+    # If provided, it will be used in naming some of the files.
+    # You can leave it blank, too.
+    # If you provide a project name and/or a run name and not an output directory (output_dir, below),
+    # the pipeline will use the project name in building an output directory:
+    # [{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}
+    run_name:
+
+  # ----------------------------------------------------------------------
+  #     Technical
+  # ----------------------------------------------------------------------
+  technical:
+
+    # [Required] Path to Python binary used by your `cosmx` conda environment.
+    # Usually something like `~/miniconda3/envs/cosmx/python`
+    path_to_python:
+  
+# =================================================================================================
+#     Inputs
+# =================================================================================================
+# Paths to input data. Use absolute (full) paths, not relative paths.
+data:
+
+  # [Required] [Character string] Absolute path to the directory containing the flat files.
+  flat_file_dir:
+
+  # [Required] [Character string] Absolute path to the directory containing the run summaries, usually in a folder called `rawFiles`.
+  # This is used to distinguish between runs when slides from multiple runs are being analyzed.
+  run_summaries_dir:
+
+  # [Optional] [Character string] Names of bacterial probes in expression data.
+  # If provided, a separate slot will be created in the RDS object for the bacterial counts.
+  # Separate probe names with commas (,).
+  bacterial_probes:
+  
+  # [Optional] [Character string] Absolute path to the RMarkdown (.Rmd) file to be used as a template in generating the output HTML file.
+  # If not provided, the pipeline will use the default Rmd template provided in ext/report_template.Rmd. 
+  rmd_template_file: 
+  
+  # [Optional] Absolute path to an output folder from a previous bisantine-cosmo run.
+  # Allows the pipeline to "pick up" from where you left off. 
+  # If provided, the pipeline will use the output Rds files from this folder.
+  previous_run_out_dir:
+
+# =================================================================================================
+#     Outputs
+# =================================================================================================
+# Output paths, using absolute file paths.
+output:
+
+  # [Optional] [Character string] Absolute path to the directory in which to save output files.
+  # If not provided, the pipeline will create the following directory and save save output files to it:
+  #   ./out/[{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}/
+  # For further information about the nomenclature of output files, see the ./docs folder.
+  output_dir:
+
+# =================================================================================================
+#     Experiment settings
+# =================================================================================================
+# Experiment settings.
+experiment:
+
+  # ----------------------------------------------------------------------
+  #     General settings
+  # ----------------------------------------------------------------------
+  general: 
+
+    # [Required] [Character string] Species name (required for pathway analysis and immune deconvolution).
+    # The following values are allowed: c("Homo sapiens", "Mus musculus")
+    species: Homo sapiens
+
+    # [Optional] [Integer] Random seed to be used in algorithms that use stochastic processes (e.g. UMAP).
+    # If not provided, it will default to 1026. 
+    random_seed: 1026
+
+  # ----------------------------------------------------------------------
+  #     Annotation column names
+  # ----------------------------------------------------------------------
+  annotation: 
+
+    # [Required] [Character string] The name of the variable in the metadata used to identify slides _within_ a run.
+    slide_name_var: Run_Tissue_name
+
+    # [Required] [Character string] The name of the variable in the metadata used to identify FOVs _within_ a slide.
+    fov_name_var: fov
+
+    # [Required] [Character string] The name of the variables in the metadata containing Cartesian (x-y) coordinates.
+    # Separate the names with a comma (,).
+    dimension_name_vars: CenterX_global_px,CenterY_global_px
+    
+     # [Required] [Character string] The name of the variable in the metadata containing the total counts for a cell.
+    total_counts_var: nCount_RNA
+    
+    # [Required] [Character string] The name of the variable in the metadata containing the total features (unique genes/molecular species) for a cell.
+    total_features_var: nFeature_RNA
+    
+    # [Required] [Character string] The name of the variable in the metadata containing the area of a cell.
+    area_var: Area
+
+    # [Optional] [Character string] The name of the variable in the metadata used to identify tissues.
+    # If not given, will default to the value given by `slide_name_var` above.
+    tissue_var: Run_Tissue_name
+
+    # [Optional] [Character string] Neo-variables, created by pasting together two or more existing variables in the sample annotation.
+    # Use a plus sign ("+") to combine variables. 
+    # Separate each neo-variable with a comma (",").
+    # These neo-variables can then be used in downstream analyses;
+    # the names of these neo-variables will be the original names, separated by an underscore ("_").
+    neovariables:
+
+    # [Optional] [Character string] Filtering variables.
+    # For each variable, follow this pattern:
+    # var1,include,value1,value2,...
+    # where var1 = the name of the variable to subset on,
+    # include = can be 1 of either "include" or "exclude", where the following values are either included or excluded,
+    # value1,value2,...,valuen = values of var1 to either include or exclude (depending on whether "include" or "exclude" is specified).
+    # Separate multiple variables with semicolons, e.g.
+    # var2,include,value1,value2,...;var2,exclude,value1,value2,...
+    filter_vars: 
+
+  # ----------------------------------------------------------------------
+  #     General QC settings
+  # ----------------------------------------------------------------------
+  general_qc:
+
+    # [Required] [Boolean TRUE or FALSE] Whether to filter cells (TRUE). 
+    # If TRUE, cells that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, cells that do not pass QC cutoffs will be flagged but not removed.
+    filter_cells: TRUE
+
+    # [Required] [Boolean TRUE or FALSE] Whether to filter FOVs (TRUE). 
+    # If TRUE, FOVs that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, FOVs that do not pass QC cutoffs will be flagged but not removed.
+    filter_fovs: TRUE
+
+    # [Required] [Boolean TRUE or FALSE] Whether to filter negative probes (FALSE). 
+    # If TRUE, negative probes that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, negative probes that do not pass QC cutoffs will be flagged but not removed.
+    filter_neg_probes: FALSE
+
+    # [Required] [Boolean TRUE or FALSE] Whether to filter certain genes (FALSE). 
+    # If TRUE, genes that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, genes that do not pass QC cutoffs will be flagged but not removed.
+    filter_targets: FALSE
+
+  # ----------------------------------------------------------------------
+  #     Cell QC settings
+  # ----------------------------------------------------------------------
+  cell_qc:
+  
+    # Settings for cell QC. Defaults are given in parentheses.
+    # We recommend leaving the settings unchanged for the first pass, reviewing the QC outputs,
+    # and then tweaking the settings accordingly for a second pass. 
+
+    # [Optional] [Numeric] Minimum number of counts a cell must have to pass QC (200).
+    # We've found that a value of 200 improves the results of cell typing, but YMMV.
+    # If not provided, will default to 200.
+    min_counts_per_cell: 200
+
+    # [Optional] [Numeric] Minimum number of unique genes a cell must have to pass QC (200).
+    # If not provided, will default to 200.
+    min_features_per_cell: 200
+
+    # [Optional] [Numeric] MAXIMUM proportion of negative probes a cell must have to pass QC (0.1).
+    # If not provided, will default to 0.1.
+    proportion_neg_counts: 0.1
+
+    # [Optional] [Numeric] Minimum ratio of counts:unique genes a cell must have to pass QC (1).
+    # Values in [1,200] recommended.
+    # If not provided, will default to 1.
+    count_dist: 1
+
+    # [Optional] [Numeric] Grubb's test p-value cutoff for cell area BELOW which cell is flagged as outlier (0.01).
+    # If not provided, will default to 0.01.
+    area_outlier_pval: 0.01
+    
+    # [Optional] [Numeric] Maximum area a cell must have to avoid being flagged.
+    # NOTE: Cells are NOT filtered by this metric; instead, they are filtered using the Grubb's test for area (see above.)
+    # However, this metric is included in the QC summary table.
+    # If not provided, will default to 30000.
+    max_area: 30000
+
+    # [Optional] [Numeric] Minimum signal strength (ratio of [counts:genes]:[counts:negative probes]) a cell must have to pass QC (4).
+    # If not provided, will default to 4.
+    min_signal_strength: 4
+
+  # ----------------------------------------------------------------------
+  #     FOV QC settings
+  # ----------------------------------------------------------------------
+  fov_qc:
+
+    # Settings for fov QC. Defaults are given in parentheses.
+
+    # [Optional] [Numeric] Minimum number of cells an FOV must have to pass QC (50).
+    # If not provided, will default to 50.
+    min_cells_per_fov: 50
+
+    # [Required] [Character string] Path to barcodes, should be an RDS file.
+    # NOTE: the path will be interpreted relative to the current working directory,
+    # i.e., the one in which `bisantine-cosmo.nf` (if Nextflow)
+    # or `Snakefile` (if Snakemake) is located (NOT necessarily the directory in which you called `bisantine-cosmo.nf` or `Snakemake`).
+    path_to_barcodes: ext/barcodes_by_panel.RDS
+
+    # [Required] [Character string] Panel of probes used in the current experiment.
+    # This tells the pipeline which barcodes to use.
+    # Can be one of c("Hs_IO", "Hs_UCC", "Hs_6k", "Mm_Neuro", "Mm_UCC") 
+    probe_panel: Hs_6k
+
+  # ----------------------------------------------------------------------
+  #     Probe QC settings
+  # ----------------------------------------------------------------------
+  probe_qc:
+
+    # Settings for probe QC. Defaults are given in parentheses.
+    
+    # [Optional] [Numeric] Grubb's test p-value cutoff for negative probe expression BELOW which probe is flagged as outlier (0.01).
+    # If not provided, will default to 0.01
+    neg_probe_outlier_pval: 0.01
+
+  # ----------------------------------------------------------------------
+  #     Target QC settings
+  # ----------------------------------------------------------------------
+  target_qc:
+
+    # Settings for target (gene) QC. Defaults are given in parentheses.
+    
+    # [Optional] [Numeric] Quantile of the means of the counts of negative probes below which to flag (0.5).
+    # If not provided, will default to 0.5
+    neg_control_probe_quantile_cutoff: 0.5
+
+    # [Optional] [Numeric] p-value below which genes are considered to be significantly lower than background (0.01).
+    # (Should we consider seeing which genes are significantly above background?)
+    # If not provided, will default to 0.01.
+    detection_over_bg_p_value: 0.01
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to filter out targets that do not meet the negative control quantile cutoff (FALSE).
+    # If not provided, will default to FALSE.
+    filter_targets_by_neg_control_quantile: FALSE
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to filter out targets that do not meet the detection over background cutoff (FALSE).
+    # If not provided, will default to FALSE.
+    filter_targets_by_detection_p_value: FALSE
+
+  # ----------------------------------------------------------------------
+  #     Normalization settings
+  # ----------------------------------------------------------------------
+  normalization:
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to log-transform the expression data after normalization (FALSE).
+    # NOTE: NanoString does not recommend non-linear (including log) transformations.
+    # If not provided, will default to FALSE.
+    log_transform: FALSE
+    
+    # [Optional] The number of variable features to find using FindVariableFeatures() (1000).
+    # If not provided, will default to FALSE.
+    n_variable_features: 1000
+
+  # ----------------------------------------------------------------------
+  #     16S analysis
+  # ----------------------------------------------------------------------
+  analysis_16s:
+
+    # [Optional] Percentile to serve as cutoff for 16S score (high vs low 16S).
+    # Samples with values >= this percentile will be classified as "high 16S",
+    # while values < this percentile will be classified as "low 16S".
+    # This classification will be stored to the metadata (pData), where it can be used for other analyses.
+    # If not provided, the value will default to 50 (50th percentile, a.k.a median)
+    # You can provide multiple values, separated by a comma (",").
+    # -----------------------------------------------------------------------------------------
+    # NOTE: IF YOU ENTER MULTIPLE VALUES, SURROUND THE ENTIRE STRING WITH QUOTATION MARKS ("").
+    # E.G.: IF YOU ONLY WANT TO USE THE 50TH PERCENTILE, JUST ENTER 50. 
+    # BUT IF YOU WANT TO USE THE 50TH, 66TH, AND 75TH PERCENTILE, ENTER "50,67,75"
+    # NOTE THE QUOTATION MARKS! 
+    # THIS IS DUE TO THE WAY R READS IN YAML FILES--IF IT THINKS IT'S AN INTEGER BUT DOESN'T
+    # CONFORM TO WHAT IT THINKS AN INTEGER SHOULD LOOK LIKE, IT WILL CONVERT IT TO NA!
+    # -----------------------------------------------------------------------------------------
+    # Each percentile provided will be evaluated individually. 
+    # NOTE: for each cutoff provided, the pipeline will generate a score (high vs low 16S)
+    # that will be added to the metadata (pData). The name will be `Grouping16S_` + [the cutoff value].
+    # For example, if you entered 50,75 as cutoffs, the pipeline will generate two sets of scores:
+    # `Grouping16S_50` and `Grouping16S_75` that will be added as columns to the pData.
+    # You can use these variables for downstream analysis, such as unsupervised analysis
+    # or differential expression analysis - i.e., you can enter these variables in 
+    # the parameters in following sections, if you so wish.
+    percentile_16s_cutoff: "50,67,75"
+
+    # [Optional] The column name(s) in the metadata corresponding to
+    # the variables you'd like to subset the data set by before running 16S analysis.
+    # You can provide multiple variables, separated by commas (,).
+    # If you have a subsetting variable but also want to conduct a 16S analysis
+    # WITHOUT subsetting, enter your subsetting variable(s), and add NA as another one. 
+    exprs_16s_subset_vars: 
+
+    # [Optional] The column in the annotation to use as a primary grouping variable.
+    # If provided, a box-and-whiskers plot will be generated of 16S expression levels (defined as the geometric mean of the normalized
+    # values of all 16S probes that passed QC) across the provided grouping variable(s), one
+    # variable at a time.
+    # If left blank, 16S expression levels will not be graphed at all.
+    exprs_16s_grouping_vars:
+
+  # ----------------------------------------------------------------------
+  #     Unsupervised analysis settings
+  # ----------------------------------------------------------------------
+  unsupervised:
+
+    # [Optional] The column in the annotation to use as a primary grouping variable.
+    # If provided, points on the UMAP dimension reduction graphs
+    # will be colored by group.
+    # You can provide multiple values, separated by commas, e.g. "variable1,variable2"
+    # You can also use a plus sign ("+") to indicate a secondary grouping variable.
+    # If provided, points on dimension reduction graphs will be assigned different shapes by 
+    # secondary grouping variable. E.g.: "variable1+variable3,variable2" will
+    # create two graphs; the first one will have its points colored by variable1 and have shapes assigned by
+    # variable3, and the second graph will have its points colored by variable2.
+    compartment_vars:
+
+    # [Optional] The columns in the annotation to use for annotation in the heatmap.
+    # Separate multiple values with commas.
+    heatmap_ann_vars:
+
+  # ----------------------------------------------------------------------
+  #     Cell typing
+  # ----------------------------------------------------------------------
+  cell_typing:
+
+    # [Optional] For graphing: observation names.
+    # The column name(s) in the sample annotation containing the variables
+    # you want to paste together to use as observation identifiers. 
+    # Separate multiple names with commas (","). 
+    # These identifiers will be used in addition to the annotation row names.
+    # If left blank, only the row names will be used as identifiers. 
+    observation_identifiers:
+
+    # [Optional] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to
+    # the variables you'd like to subset the data set by before running immune deconvolution.
+    # You can provide multiple variables, separated by commas (,).
+    # If you have a subsetting variable but also want to conduct immune deconvolution
+    # WITHOUT subsetting, enter your subsetting variable(s), and add NA as another one. 
+    cell_typing_subset_vars:
+
+    # [Optional] Grouping variable(s).
+    # If provided, the data will be grouped by the provided variables, one at a time,
+    # before graphing. 
+    # Multiple values are accepted; separate them with a comma (,).
+    cell_typing_grouping_vars:
+
+    # [Optional] Whether or not when graphing to remove observations with NA 
+    # as the value for the grouping variable of interest. 
+    # If set to TRUE, observations with NA as the value for the grouping variable of interest
+    # will be removed. Otherwise (including if left blank), observations with NA will be left in.
+    cell_typing_remove_na: TRUE
+    
+    ## !-- The next two settings are unused for now. --##
+    # # [Required] path to human genome reference FASTA.
+    # path_to_hg_fasta: Path/to/HG/FASTA
+    # # [Required] path to human genome reference GTF.
+    # path_to_hg_gtf: Path/to/HG/GFT
+    
+  # ----------------------------------------------------------------------
+  #     Differential expression
+  # ----------------------------------------------------------------------
+  lmm:
+
+    # In this section there are four parameters for running linear mixed models (LMMs).
+    # You can specify multiple experiments, as follows:
+    # let's say you wanted to run two LMMs, 
+    # the first: uses a random slope, 
+    #   the test variable is named `Region` in the annotation, 
+    #   the random intercept is the column `Sample ID` in the annotation,
+    #   and the random slope is also `Region`;
+    # the second: does NOT use a random slope,
+    #   the test variable is named `Tissue Type` in the annotation,
+    #   and the random intercept is `Sample ID`.
+    # then you would fill out the four variables as follows:
+    #
+    # random_slope: yes,no
+    # test_vars: Region,Tissue Type
+    # random_intercept_vars: Sample ID,Sample ID
+    # random_slope_vars: Region,NA        
+    # 
+    # NOTE: the number of values passed to each variable
+    # must be the same across all the variables; otherwise,
+    # values will be recycled to match the length of the longest variable. 
+
+    # [Required] Whether or not to use a random slope in the linear mixed model.
+    # The following values are allowed: c("yes", "no")
+    random_slope: no
+
+    # [Required] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to
+    # the variables to be used for the test variable in the linear mixed models for differential expression.
+    # You can provide multiple variables, separated by commas (,).
+    test_vars:
+
+    # [Required] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to 
+    # the variables to be used for the random intercept in the linear mixed models for differential expression.
+    # You can provide multiple variables, separated by commas (,).
+    random_intercept_vars:
+
+    # !-- As of v0.2.0, random_slope_vars is deprecated for the following reason:
+    # "because since the current setup only allows the formula to accept one test variable at a time, 
+    # most of the time(?) I think the random slope variable would be the same as the test variable 
+    # (see https://bioconductor.org/packages/devel/workflows/vignettes/GeoMxWorkflows/inst/doc/GeomxTools_RNA-NGS_Analysis.html)."
+    # [Required] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to 
+    # the variables to be used for the random slope in the linear mixed models for differential expression.
+    # You can provide multiple variables, separated by commas (,).
+    # NOTE: If you are not using a random slope, enter "none".
+    #random_slope_vars: Random slope variables go here
+    # !-- END DEPRECATED VARIABLE --! 
+
+    # [Optional] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to
+    # the variables you'd like to subset the data set by before running differential expression analysis.
+    # You can provide multiple variables, separated by commas (,).
+    # Each variable provided will be used to subset each of the experiments defined by the four variables above,
+    # so there will probably be unnecessary models built. That's OK; you can just ignore them.
+    # If you have a subsetting variable but also want to conduct a differential expression experiment
+    # WITHOUT subsetting, enter your subsetting variable(s), and add NA as another one. 
+    subset_vars:
+
+    # [Optional] Values of the above subset_vars to include when subsetting.
+    # For each variable in subset_vars above, separate the values of that variable with commas,
+    # and separate multiple variables with semi-colons (;). 
+    # So, if subset_var_levels_manual is not empty, then for each value of subset_vars, 
+    # the pipeline, _in addition to_ subsets by each level individually, will _also_
+    # do a subset consisting of only the subset_var_levels_manual values. 
+    # You can skip a subsetting variable by inputting NA.
+    subset_var_levels_manual: 
+
+    # [Optional] Cutoff, in number of standard deviations (SDs) away from the mean of the coefficient of variance,
+    # to filter genes before running differential expression via linear mixed models.
+    # For example, if you enter "2", only genes with a coefficient of variance 2SD _higher_ than 
+    # the mean coefficient of variance will be kept for differential expression analysis.
+    # This speeds up the time it takes to fit the linear mixed models.
+    # If left blank, all available genes will be used. 
+    cv_cutoff: 
+
+    # [Optional] Number of top differentially expressed genes to label on the volcano plots.
+    # This number will be applied to either side of the plot, so if you enter 10,
+    # [up to] 20 genes will be labeled on the plot. 
+    n_top_genes: 15
+
+    # [Optional] Cutoff for differentially expressed genes for heatmap, 
+    # expressed as [maximum false discovery rate (FDR)],[minimum absolute log2 fold change (LFC)].
+    # For example, if you want as your DE genes only those genes with an FDR < 0.05 
+    # and an LFC > 1, you'd enter 0.05,1
+    # If only one value is provided, it will be treated as the FDR.
+    # If left blank, the FDR cutoff will be set to 0.25, 
+    # and the minimum absolute LFC will be set to 0.58.
+    de_genes_cutoffs:
+
+    # # [Optional] [Currently not in use] User-supplied formula(e) for running linear mixed models.
+    # # You can provide multiple formulae, separated by commas (,).
+    # # NOTE: providing a formula will override the random_slope, test_vars, random_intercept_vars, and random_slope_vars parameters.
+    # lmm_formulae:
+
+  # ----------------------------------------------------------------------
+  #     Pathway analysis
+  # ----------------------------------------------------------------------
+  pathway_analysis:
+
+    # Pathway analysis is conducted using the FGSEA algorithm with pathways from mSigDB. 
+
+    # [Optional] Absolute path to a CSV, TSV, or Excel (.xlsx) file containing the 
+    # mSigDB pathway sets of interest. 
+    # The format of the file should be as follows: 
+    # The first column contains the main categories (e.g. "H" for hallmark gene sets,
+    # "C2" for curated gene sets, "C5" for ontology gene sets).
+    # The second column contains the subcategories (e.g. "CP:BIOCARTA" for the BioCarta subset
+    # of the canonical pathways [CP] within the C2 sets, or "GO:CC" for the Cellular Component 
+    # subset of the Gene Ontology [GO] gene sets within the C5 sets.)
+    # If a main category does not include subcategories (e.g. the hallmark gene sets), fill in
+    # "NA" (no quotation marks) as the value at the appropriate index in the second column.
+    # DO NOT INCLUDE COLUMN HEADERS.
+    # Here is an example using tab separators:
+    #
+    # H NA
+    # C2  CP:BIOCARTA
+    # C2  CP:REACTOME
+    # C3  CP:PID
+    # 
+    # For more information on available pathways, see https://www.gsea-msigdb.org/gsea/msigdb. 
+    # If left blank, the pipeline will automatically run FGSEA against ALL pathways in the 
+    # following pathway sets:
+    # H (hallmark pathways), C2:CP:BIOCARTA (BioCarta pathways), C2:CP:REACTOME (Reactome) pathways
+    pathway_table_file: 
+
+    # [Optional] Individual pathways to perform FGSEA against. 
+    # If provided, FGSEA will be run against ONLY these pathways.
+    # These pathways MUST be in the pathway sets listed in the table designated by pathway_table_file
+    # (or the default pathways if pathway_table_file is left blank). 
+    # Separate pathways with commas.
+    # E.g.: BIOCARTA_GPCR_PATHWAY,REACTOME_REGULATION_OF_HMOX1_EXPRESSION_AND_ACTIVITY,HALLMARK_HEDGEHOG_SIGNALING 
+    individual_pathways:
+
+    # [Optional] The maximum number of pathways to display on the FGSEA bar graphs.
+    # The cutoff is determined by the pathway ranking score, which is given by 
+    #   pathway ranking score = -log10(adjusted p-value) * abs(normalized enrichment score)
+    # This value is optional, but highly recommended to use the default setting of 15.
+    n_max_pathways: 15
+
+## !-- Settings below this line are unused for now --##
+# # =================================================================================================
+# #     Publication settings
+# # =================================================================================================
+# # Settings for graphics and documents intended for publication.
+# pubs:
+
+# # ----------------------------------------------------------------------
+# #     Figures
+# # ----------------------------------------------------------------------
+
+#   # [Optional] Graph width, in inches.
+#   fig_width: 5
+
+#   # [Optional] Graph height, in inches.
+#   fig_height: 3
