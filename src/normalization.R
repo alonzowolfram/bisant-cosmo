@@ -163,4 +163,8 @@ gc()
 # Export to disk -------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Export Seurat object.
 saveRDS(seu.obj.norm, paste0(output_dir_rdata, "seuratObject_normalized.rds"))
+
+# Update latest module completed.
+updateLatestModule(output_dir_rdata, current_module)

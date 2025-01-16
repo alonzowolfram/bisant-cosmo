@@ -22,8 +22,9 @@ if(workflow_system=="Nextflow") {
   source("src/setup.R") # I guess the path it sources from is the current working directory, not the path the R script lives in.
 }
 
-# Load the Seurat objects with the necessary data. 
-qc_metrics_path <- cl_args[5]
+# Load the RDS objects with the necessary data (which is just the latest module completed). 
+rds_path <- cl_args[5]
+latest_module <- readRDS(rds_path)
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
@@ -32,6 +33,9 @@ qc_metrics_path <- cl_args[5]
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 message(paste0("Rendering HTML report using the template found at ", rmd_template_file, "."))
 # saveRDS(iris, paste0(output_dir_pubs, "test.rds"))
+# Set the paths.
+qc_metrics_path <- paste0(output_dir_rdata, "qc_metrics.rds")
+# Render.
 rmarkdown::render(rmd_template_file,
                   output_file=paste0(output_dir_pubs, "report.html"),
                   params=list(qc_metrics_file=qc_metrics_path))

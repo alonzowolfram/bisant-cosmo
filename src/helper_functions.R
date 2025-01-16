@@ -19,6 +19,20 @@ detachAllPackages <- function() {
 # https://stackoverflow.com/a/1395280
 getSizeAllObjects <- function() { return(sort(sapply(ls(), function(x){object.size(get(x))}), decreasing = TRUE)) }
 
+#' Export RDS file containing name of latest completed module:
+#' 
+#' @param output_path Directory to which Rds file should be exported
+#' @param module The name of the current module that was just completed
+#' @return A Boolean
+#' @export
+updateLatestModule <- function(output_path, module) {
+  file_name <- "latest_rule.Rds"
+  latest_rule <- module
+  saveRDS(latest_rule, paste0(output_path, file_name))
+  
+  return(TRUE)
+}
+
 # QC ----
 calcSignalStrength <- function(n_features, n_features_neg, seu_obj) { # reseg = F
   # nCount_RNA <- ifelse(reseg, seu.obj.reseg@meta.data$nCount_RNA, seu.obj@meta.data$nCount_RNA)

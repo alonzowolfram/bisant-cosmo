@@ -1,7 +1,7 @@
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##   License ----
 ##
-#     bisantine-cosmo is a Nextflow pipeline for processing, running QC on, and analyzing NanoString CosMx spatial single-cell data.
+#     bisant-cosmo is a Nextflow pipeline for processing, running QC on, and analyzing NanoString CosMx spatial single-cell data.
 #     Copyright (C) 2025 Lon Fong.
 
 #     This program is free software: you can redistribute it and/or modify
