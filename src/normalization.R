@@ -142,7 +142,7 @@ if("bacprobes" %in% names(seu.obj.filt)) {
 seu.obj.norm@meta.data <- seu.obj.filt@meta.data
 
 # Scale and center. 
-system.time(seu.obj.norm <- FindVariableFeatures(seu.obj.norm, 
+system.time(seu.obj.norm <- FindVariableFeatures(seu.obj.norm,
                                                  assay = "RNA",
                                                  selection.method = "vst", 
                                                  nfeatures = n_variable_features, 
