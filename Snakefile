@@ -87,7 +87,7 @@ onsuccess:
         print("No changes detected in configuration YAML file. Skipping copy.")
 
     # Create the report. 
-    os.system("Rscript make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
+    os.system("Rscript src/make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
 
 rule normalization:
     input:
