@@ -89,6 +89,26 @@ onsuccess:
     # Create the report. 
     os.system("Rscript src/make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
 
+rule pca:
+    input:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_normalized.rds"
+    output:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_PCA.rds"
+    params:
+        workflow_system = WORKFLOW_SYSTEM,
+        script = "src/pca.R",
+        output_path = OUTPUT_PATH,
+        current_module = "pca",
+        config_path = CONFIG_PATH,
+        project_directory = PROJECT_DIRECTORY
+    log:
+        out = OUTPUT_PATH + "logs/pca.out",
+        err = OUTPUT_PATH + "logs/pca.err" 
+    shell:
+        """
+        Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file} {params.project_directory} 1> {log.out} 2> {log.err}
+        """
+
 rule normalization:
     input:
         R_file = OUTPUT_PATH + "Rdata/seuratObject_filtered.rds"
