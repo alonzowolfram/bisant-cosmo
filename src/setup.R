@@ -132,6 +132,10 @@ filter_targets_by_detection_p_value <- target_qc$filter_targets_by_detection_p_v
 normalization <- experiment$normalization
 log_transform <- normalization$log_transform
 n_variable_features <- normalization$n_variable_features
+### Batch-effect correction
+batch_effect_correction <- experiment$batch_effect_correction
+correct_batch_effects <- batch_effect_correction$correct_batch_effects
+batch_covariates <- batch_effect_correction$batch_covariates
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -213,6 +217,8 @@ if(flagVariable(filter_targets_by_detection_p_value)) filter_targets_by_detectio
 #### Normalization ----
 if(flagVariable(log_transform)) log_transform <- FALSE
 if(flagVariable(n_variable_features)) n_variable_features <- 1000
+#### Batch-effect correction ----
+if(flagVariable(correct_batch_effects) || flagVariable(batch_covariates)) correct_batch_effects <- FALSE
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -226,6 +232,8 @@ if(!flagVariable(bacterial_probes)) bacterial_probes <- bacterial_probes %>% str
 ### Experiment ---- 
 #### Annotation ----
 if(!flagVariable(dimension_name_vars)) dimension_name_vars <- dimension_name_vars %>% strsplit(",") %>% unlist
+#### Batch-effect correction ----
+if(!flagVariable(batch_covariates)) batch_covariates <- batch_covariates %>% strsplit(",") %>% unlist
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -254,11 +262,13 @@ if(workflow_system=="Nextflow") {
   bin_path <- tail(path[[1]], n=1)
   source(file.path(bin_path, "FOV_QC_utils_modified.R")) # FOV QC functions from https://github.com/Nanostring-Biostats/CosMx-Analysis-Scratch-Space/tree/FOV-QC/code/FOV%20QC
   source(file.path(bin_path, "helper_functions.R"))
+  source(file.path(bin_path, "plotting_functions.R"))
   source(file.path(bin_path, "ligand-receptor_interactions.R"))
 } else {
   bin_path <- ""
   source("src/FOV_QC_utils_modified.R") # FOV QC functions from https://github.com/Nanostring-Biostats/CosMx-Analysis-Scratch-Space/tree/FOV-QC/code/FOV%20QC
   source("src/helper_functions.R")
+  source("src/plotting_functions.R")
   source("src/ligand-receptor_interactions.R")
 }
 
