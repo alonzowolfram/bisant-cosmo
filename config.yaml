@@ -279,6 +279,20 @@ experiment:
     n_variable_features: 1000
 
   # ----------------------------------------------------------------------
+  #     Batch-effect correction settings
+  # ----------------------------------------------------------------------
+  batch_effect_correction:
+  
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to perform batch-effect correction using the harmony package. 
+    # If not provided, will default to FALSE.
+    correct_batch_effects: 
+    
+    # [Optional] The name(s) of the column(s) in the metadata to use as batch covariates when running batch-effect correction.
+    # If multiple covariates are provided, separate each one with a comma (",").
+    # If not provided, batch-effect correction will be skipped. 
+    batch_covariates: 
+    
+  # ----------------------------------------------------------------------
   #     16S analysis
   # ----------------------------------------------------------------------
   analysis_16s:
