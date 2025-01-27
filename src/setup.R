@@ -138,6 +138,7 @@ correct_batch_effects <- batch_effect_correction$correct_batch_effects
 batch_covariates <- batch_effect_correction$batch_covariates
 ### Neighbor-networks clustering
 neighbor_networks <- experiment$neighbor_networks
+jaccard_cutoff <- neighbor_networks$jaccard_cutoff
 cluster_resolution <- neighbor_networks$cluster_resolution
 dist_metric_nn <- neighbor_networks$dist_metric_nn
 downsampling_nn <- neighbor_networks$downsampling_nn
