@@ -10,6 +10,7 @@ dependencies:
   - conda-forge::r-base=4.3.1 # R.
   - conda-forge::r-circlize=0.4.16 # For colorRamp2() function, used in helper functions for spatial analysis.
   - conda-forge::r-devtools=2.4.5 # For installing external R packages from GitHub etc.
+  - conda-forge::r-harmony=1.2.3 # Batch-effect correction for single-cell data.
   - conda-forge::r-outliers=0.15 # Collection of tests commonly used for identifying outliers.
   - conda-forge::r-r.utils=2.12.3 # To read gz and bz2 files directly, fread() requires 'R.utils' package.
   - conda-forge::r-rmarkdown=2.29 # Convert .Rmd (Rmarkdown) documents into a variety of formats (HTML, PDF, etc.)
