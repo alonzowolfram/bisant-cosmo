@@ -293,6 +293,34 @@ experiment:
     batch_covariates: 
     
   # ----------------------------------------------------------------------
+  #     Neighbor-networks settings
+  # ----------------------------------------------------------------------
+  neighbor_networks:
+    
+    # [Optional] [Numeric] The value of the prune.SNN parameter for Seurat::FindNeighbors().
+    # "Sets the cutoff for acceptable Jaccard index when computing the neighborhood overlap for the SNN construction. 
+    # "Any edges with values less than or equal to this will be set to 0 and removed from the SNN graph. 
+    # "Essentially sets the stringency of pruning (0 — no pruning, 1 — prune everything)."
+    # If not provided, will default to 0.067.
+    jaccard_cutoff:
+    
+    # [Optional] [Numeric] The value of the clustering parameter for Seurat::FindClusters().
+    # Values above 1.0 will give larger numbers of communities, while values below 1.0 will give smaller numbers.
+    # If not provided, will default to 1.01
+    cluster_resolution: 
+    
+    # [Optional] [Character] The name of the distance metric to use for annoy. 
+    # Options include euclidean, cosine, manhattan, and hamming. 
+    # If not provided, will default to "euclidean".
+    dist_metric_nn: 
+    
+    # [Optional] [Numeric] The number of cells to downsample to when performing marker identification after clustering.
+    # Downsampling allows the computations to run faster. 
+    # Input a negative value to force the algorithm to use all cells when identifying cluster markers (not recommended unless you have a lot of time).
+    # If not provided, will default to 2000.
+    downsampling_nn: 
+  
+  # ----------------------------------------------------------------------
   #     16S analysis
   # ----------------------------------------------------------------------
   analysis_16s:

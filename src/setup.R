@@ -139,6 +139,8 @@ batch_covariates <- batch_effect_correction$batch_covariates
 ### Neighbor-networks clustering
 neighbor_networks <- experiment$neighbor_networks
 cluster_resolution <- neighbor_networks$cluster_resolution
+dist_metric_nn <- neighbor_networks$dist_metric_nn
+downsampling_nn <- neighbor_networks$downsampling_nn
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -222,6 +224,11 @@ if(flagVariable(log_transform)) log_transform <- FALSE
 if(flagVariable(n_variable_features)) n_variable_features <- 1000
 #### Batch-effect correction ----
 if(flagVariable(correct_batch_effects) || flagVariable(batch_covariates)) correct_batch_effects <- FALSE
+#### Neighbor networks and clustering ----
+if(flagVariable(jaccard_cutoff)) jaccard_cutoff <- 0.067
+if(flagVariable(cluster_resolution)) cluster_resolution <- 1.01
+if(flagVariable(dist_metric_nn)) dist_metric_nn <- "euclidean"
+if(flagVariable(downsampling_nn)) downsampling_nn <- 2000
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
