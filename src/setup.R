@@ -136,6 +136,9 @@ n_variable_features <- normalization$n_variable_features
 batch_effect_correction <- experiment$batch_effect_correction
 correct_batch_effects <- batch_effect_correction$correct_batch_effects
 batch_covariates <- batch_effect_correction$batch_covariates
+### Neighbor-networks clustering
+neighbor_networks <- experiment$neighbor_networks
+cluster_resolution <- neighbor_networks$cluster_resolution
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -255,6 +258,7 @@ system("which python")
 # if(Sys.info()['sysname']=="Linux" & base::grep("dragon", Sys.info()['nodename'])) .libPaths("/home/lwfong/R/ubuntu/4.3.1")
 library(Seurat) # [conda] Handling single-cell data.
 library(rmarkdown) # [conda] Rendering R Markdown reports. 
+library(harmony) # [conda] Batch-effect correction.
 
 workflow_system <- cl_args[2]
 if(workflow_system=="Nextflow") {

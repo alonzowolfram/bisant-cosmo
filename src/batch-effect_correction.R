@@ -45,14 +45,17 @@ seu.obj.pca <- readRDS(pca_data_path)
 # https://satijalab.org/seurat/archive/v3.0/dim_reduction_vignette#:~:text=embeddings%3A%20stores%20the%20coordinates%20for,each%20dimension%20of%20the%20embedding
 set.seed(random_seed)
 for(batch_covariate in batch_covariates) {
-  seu.obj.pca@reductions$pca@cell.embeddings %>% .[,1:2] %>% as.data.frame %>% 
+  plot <- seu.obj.pca@reductions$pca@cell.embeddings %>% .[,1:2] %>% as.data.frame %>% 
     rownames_to_column(var = "updated_cell_id") %>% 
     dplyr::left_join(seu.obj.pca@meta.data %>% 
                        dplyr::select(updated_cell_id, !!as.name(batch_covariate))) %>% # https://stackoverflow.com/questions/68749491/dplyr-r-selecting-columns-whose-names-are-in-an-external-vector
     .[sample(nrow(.)),] %>% 
     ggplot(aes(x = PC_1, y = PC_2, color = !!as.name(batch_covariate))) %>%
-    DSPplotScatter(path_out = output_dir_pubs, filename = paste0("pre-harmonization_", batch_covariate), title = paste0("Pre-harmonization | ", batch_covariate))
+    DSPplotScatter(title = paste0("Pre-harmonization | ", batch_covariate))
+  
+  DSPexportPlot(plot, path_out = output_dir_pubs, filename = paste0("pre-harmonization_", batch_covariate))
 }
+rm(plot)
 
 seu.obj.harmonized <- seu.obj.pca
 if(correct_batch_effects) {
@@ -69,14 +72,17 @@ if(correct_batch_effects) {
   
   # Visualize harmonized data.
   for(batch_covariate in batch_covariates) {
-    seu.obj.harmonized@reductions$harmony@cell.embeddings %>% .[,c("harmony_1", "harmony_2")] %>% as.data.frame %>% 
+    plot <- seu.obj.harmonized@reductions$harmony@cell.embeddings %>% .[,c("harmony_1", "harmony_2")] %>% as.data.frame %>% 
       rownames_to_column(var = "updated_cell_id") %>% 
       dplyr::left_join(seu.obj.harmonized@meta.data %>% dplyr::select(updated_cell_id, !!as.name(batch_covariate))) %>% 
       .[sample(nrow(.)),] %>% 
       ggplot(aes(x = harmony_1, y = harmony_2, color = !!as.name(batch_covariate))) %>%
-      DSPplotScatter(path_out = output_dir_pubs, paste0("post-harmonization_", batch_covariate), title = paste0("Post-harmonization | ", batch_covariate), geom_jitter = TRUE)
+      DSPplotScatter(title = paste0("Post-harmonization | ", batch_covariate), geom_jitter = TRUE)
+    
+    DSPexportPlot(plot, path_out = output_dir_pubs, filename = paste0("post-harmonization_", batch_covariate))
   }
 }
+rm(plot)
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
