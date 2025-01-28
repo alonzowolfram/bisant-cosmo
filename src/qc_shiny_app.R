@@ -1,8 +1,15 @@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# Setup --------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+## Required packages ----
 library(shiny)
 library(tidyverse)
 library(DT) # For the display tables.
+library(bslib) # Styling of Shiny apps.
 
-# Data frame containing all the QC parameters.
+## QC parameter data frame ----
 config <- data.frame(
   name = character(),
   displayname = character(),
@@ -13,7 +20,7 @@ config <- data.frame(
 )
 config <- rbind(config,
                 data.frame(
-                  name = c("min_counts_per_cell","min_features_per_cell","max_proportion_neg_counts","min_count_distribution","max_area","min_signal_strength"),
+                  name = c("min_counts_per_cell", "min_features_per_cell", "max_proportion_neg_counts", "min_count_distribution", "max_area","min_signal_strength"),
                   displayname = c("Minimum number of counts per cell", "Minimum number of features per cell", "Maximum proportion of negative counts per cell", "Minimum complexity per cell", "Maximum area per cell", "Minimum signal strength per cell"),
                   metadata_name = c("nCount_RNA", "nFeature_RNA", "ProportionNegative", "Complexity", "Area", "SignalStrength"),
                   min = c(0, 0, 0, 0, 0, 0),
@@ -24,40 +31,79 @@ config <- rbind(config,
                 )
 )
 
+## Custom functions ----
+#' Make a histogram.
+#' 
+#' @param plot ggplot2 plot
+#' @export
+DSPplotHistogram <- function(plot, n_bins = 100,
+                             scale_x_log10 = TRUE,
+                             theme_base_size = 12,
+                             fill_color = "lightgray", outline_color = "black",
+                             vline_xintercept = NULL, vline_color = "red", vline_type = "dashed",
+                             facet_wrap_var = NULL,
+                             x_lab = NULL, y_lab = NULL, title = NULL) {
+  plot <- plot + 
+    geom_histogram(bins = n_bins, fill = fill_color, color = outline_color) +
+    labs(x = x_lab, y = y_lab) +
+    theme_bw(base_size = theme_base_size) +
+    theme(panel.grid = element_blank())
+  
+  # Add vline
+  if(!is.null(vline_xintercept)) plot <- plot + geom_vline(xintercept = vline_xintercept, color = vline_color, linetype = vline_type)
+  # Scale log10
+  if(scale_x_log10) plot <- plot + scale_x_log10()
+  # Facet wrap
+  if(!is.null(facet_wrap_var)) plot <- plot + facet_wrap(~ get(facet_wrap_var))
+  
+  return(plot)
+}
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# UI layout --------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Layout
 ui <- fluidPage(
-  # Include custom CSS for table styling
-  tags$head(
-    tags$style(HTML("
-      .dt-center { text-align: center; }
-      .dt-left { text-align: left; }
-    "))
-  ),
+  # theme = bs_theme(version = 4, bootswatch = "cerulean"), # Use a theme
+  titlePanel("CosMx QC dashboard"),
   
-  # Application title
-  titlePanel("QC"),
-  
-  # Sidebar with a slider input for number of bins 
+  ## Cell QC ----
   sidebarLayout(
     sidebarPanel(
       # Dynamically generated inputs
       uiOutput("dynamicInputs"),
       
-      # Display the values of the inputs
+      # Input value display
       verbatimTextOutput("inputValues")
     ),
-    
-    # Display the table of flagged cells
     mainPanel(
+      # Dynamically generated histogram tabs
+      uiOutput("histogramTabs"),
+      
+      # QC summary table
       DTOutput("flaggedTable")
     )
   )
+  # ,
+  # 
+  # ## FOV QC ----
+  # card(
+  #   card_header("FOV QC"),
+  #   layout_sidebar()
+  # )
 )
 
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# Server-side functions --------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 server <- function(input, output, session) {
-  # Dynamically generate the inputs
+  ## Input generation ----
   output$dynamicInputs <- renderUI({
-    # Create a list of UI elements
-    uiList <- lapply(1:nrow(config), function(i) {
+    lapply(1:nrow(config), function(i) {
       fluidRow(
         column(
           width = 8,
@@ -83,80 +129,100 @@ server <- function(input, output, session) {
         )
       )
     })
-    
-    # # Return the list of UI elements
-    # do.call(tagList, uiList)
   })
   
-  # Synchronize slider and numeric inputs
+  ## Slider and numeric input synchronization ----
   observe({
     for (i in 1:nrow(config)) {
       local({
         name <- config$name[i]
-        
         observeEvent(input[[paste0(name, "_slider")]], {
-          updateNumericInput(
-            session,
-            paste0(name, "_numeric"),
-            value = input[[paste0(name, "_slider")]]
-          )
+          updateNumericInput(session, paste0(name, "_numeric"), value = input[[paste0(name, "_slider")]])
         })
-        
         observeEvent(input[[paste0(name, "_numeric")]], {
-          updateSliderInput(
-            session,
-            paste0(name, "_slider"),
-            value = input[[paste0(name, "_numeric")]]
-          )
+          updateSliderInput(session, paste0(name, "_slider"), value = input[[paste0(name, "_numeric")]])
         })
       })
     }
   })
   
-  # Calculate flagged cells dynamically
+  ## Flagged cell calculation ----
   output$flaggedTable <- renderDT({
-    # Load in the data object.
     cell_stats <- readRDS("Rdata/flagged_metadata_raw.rds")
-    
-    # Prepare an empty list to store flagged counts
     flagged_matrix <- sapply(1:nrow(config), function(i) {
       stat <- config$name[i]
       metadata_name <- config$metadata_name[i]
       cutoff <- input[[paste0(stat, "_numeric")]]
       is_minimum <- config$flag_as_minimum[i]
-      
-      # Determine flagged cells based on min/max logic
       if (is_minimum) {
-        # sum(cell_stats[[metadata_name]] < cutoff) # Count cells below the minimum
         cell_stats[[metadata_name]] < cutoff
       } else {
-        # sum(cell_stats[[metadata_name]] > cutoff) # Count cells above the maximum
         cell_stats[[metadata_name]] > cutoff
       }
     })
-    
-    # Calculate flagged counts for individual stats
     flagged_counts <- colSums(flagged_matrix)
-    
-    # Calculate total flagged cells (any stat)
     total_flagged <- sum(rowSums(flagged_matrix) > 0)
     total_passed <- nrow(cell_stats) - total_flagged
-    
-    # Create a data frame for display
     results <- data.frame(
       Stat = c(config$displayname, "Total Flagged", "Total Passed", "All cells"),
       `Flagged count` = c(flagged_counts, total_flagged, total_passed, nrow(cell_stats))
     )
-    
-    datatable(results, options = list(
-      pageLength = 10,
-      columnDefs = list(
-        list(width = '40%', targets = 0), # Adjust width for Stat column
-        list(width = '60%', targets = 1)
-      )
-    ))
+    datatable(results, options = list(pageLength = 10))
   })
+  
+  ## Histogram tab generation ----
+  output$histogramTabs <- renderUI({
+    # Load data once.
+    cell_stats <- readRDS("Rdata/flagged_metadata_raw.rds")
+    
+    # Create a tab for each QC metric.
+    nav_items <- lapply(1:nrow(config), function(i) {
+      nav_panel(
+        title = config$displayname[i],
+        plotOutput(outputId = paste0("histogram_", config$name[i]))
+      )
+    })
+    
+    # Return the tabs.
+    do.call(navset_pill, nav_items)
+  })
+  
+  ## Histogram rendering ----
+  observe({
+    cell_stats <- readRDS("Rdata/flagged_metadata_raw.rds") # Load data once.
+    
+    for (i in 1:nrow(config)) {
+      local({
+        # Capture the current iteration's variables.
+        stat <- config$name[i]
+        metadata_name <- config$metadata_name[i]
+        display_name <- config$displayname[i]
+        cutoff_input <- paste0(stat, "_numeric")
+        step <- config$step[i]
+        
+        # Render histogram dynamically.
+        output[[paste0("histogram_", stat)]] <- renderPlot({
+          cutoff <- input[[cutoff_input]] # Get the current cutoff value.
+          
+          plot <- ggplot(cell_stats, aes_string(x = metadata_name))
+          DSPplotHistogram(plot, n_bins = 100,
+                           scale_x_log10 = FALSE,
+                           theme_base_size = 12,
+                           fill_color = "lightgray", outline_color = "black",
+                           vline_xintercept = cutoff, vline_color = "red", vline_type = "dashed",
+                           facet_wrap_var = NULL,
+                           x_lab = display_name, y_lab = "Number of cells", title = NULL)
+        })
+      }) # End of local()
+    }
+  })
+  
+  
 }
 
-# Run the application.
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# Application --------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 shinyApp(ui, server)
