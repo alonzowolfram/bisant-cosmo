@@ -89,6 +89,26 @@ onsuccess:
     # Create the report. 
     os.system("Rscript src/make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
 
+rule umap:
+    input:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_clustered.rds"
+    output:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_UMAP.rds"
+    params:
+        workflow_system = WORKFLOW_SYSTEM,
+        script = "src/umap.R",
+        output_path = OUTPUT_PATH,
+        current_module = "umap",
+        config_path = CONFIG_PATH,
+        project_directory = PROJECT_DIRECTORY
+    log:
+        out = OUTPUT_PATH + "logs/umap.out",
+        err = OUTPUT_PATH + "logs/umap.err" 
+    shell:
+        """
+        Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file} {params.project_directory} 1> {log.out} 2> {log.err}
+        """
+
 rule neighbor_networks_clustering:
     input:
         R_file = OUTPUT_PATH + "Rdata/seuratObject_harmonized.rds"

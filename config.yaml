@@ -321,6 +321,37 @@ experiment:
     downsampling_nn: 
   
   # ----------------------------------------------------------------------
+  #     UMAP settings
+  # ----------------------------------------------------------------------
+  umap:
+  
+    # [Optional] [Integer] "Which dimensions to use as input features, used only if features is NULL."
+    # In my experience, this is the most important parameter for controlling how much separation we get in the UMAP.
+    # If not provided, will default to 30.
+    n_dims_umap: 
+     
+    # [Optional] [Integer] "This determines the number of neighboring points used in local approximations of manifold structure. 
+    # "Larger values will result in more global structure being preserved at the loss of detailed local structure. 
+    # "In general this parameter should often be in the range 5 to 50."
+    # If not provided, will default to 5.
+    n_neighbors_umap:
+    
+    # [Optional] [Numeric] "This controls how tightly the embedding is allowed compress points together. 
+    # "Larger values ensure embedded points are moreevenly distributed, while smaller values allow the algorithm to optimise more accurately with regard to local structure. 
+    # "Sensible values are in the range 0.001 to 0.5."
+    # If not provided, will default to 0.005.
+    min_dist_umap:
+    
+    # [Optional] [Numeric] "The effective scale of embedded points. 
+    # "In combination with min.dist this determines how clustered/clumped the embedded points are."
+    # If not provided, will default to 1.
+    spread_umap:
+    
+    # [Optional] [Character] The distance metric used in the input space.
+    # If not provided, will default to "euclidean".
+    dist_metric_umap:
+    
+  # ----------------------------------------------------------------------
   #     16S analysis
   # ----------------------------------------------------------------------
   analysis_16s:

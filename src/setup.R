@@ -142,6 +142,13 @@ jaccard_cutoff <- neighbor_networks$jaccard_cutoff
 cluster_resolution <- neighbor_networks$cluster_resolution
 dist_metric_nn <- neighbor_networks$dist_metric_nn
 downsampling_nn <- neighbor_networks$downsampling_nn
+### UMAP
+umap <- experiment$umap
+n_dims_umap <- umap$n_dims_umap
+n_neighbors_umap <- umap$n_neighbors_umap
+min_dist_umap <- umap$min_dist_umap
+spread_umap <- umap$spread_umap
+dist_metric_umap <- umap$dist_metric_umap
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -230,6 +237,12 @@ if(flagVariable(jaccard_cutoff)) jaccard_cutoff <- 0.067
 if(flagVariable(cluster_resolution)) cluster_resolution <- 1.01
 if(flagVariable(dist_metric_nn)) dist_metric_nn <- "euclidean"
 if(flagVariable(downsampling_nn)) downsampling_nn <- 2000
+#### UMAP ----
+if(flagVariable(n_dims_umap)) n_dims_umap <- 30
+if(flagVariable(n_neighbors_umap)) n_neighbors_umap <- 5
+if(flagVariable(min_dist_umap)) min_dist_umap <- 0.005
+if(flagVariable(spread_umap)) spread_umap <- 1
+if(flagVariable(dist_metric_umap)) dist_metric_umap <- "euclidean"
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
