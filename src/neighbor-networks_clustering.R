@@ -60,22 +60,27 @@ system.time({
 gc()
 
 ## Visualization --------------------------------------
-# # Plot the cell locations in 2D space as in the tissue.
-# # Extract cell metadata.
-# cell_coords <- seu.obj.clustered@meta.data %>% .[,c(dimension_name_vars,
-#                                                    slide_name_var, 
-#                                                    tissue_var)]
-# head(cell_coords) %>% View
-# 
-# # Plot clusters
-# plot <- cell_coords %>% DSPplotScatter(plot, 
-#                                  point_size = 0.01, point_alpha = 0.05, geom_jitter = TRUE,
-#                                  panel_border_color = "black", panel_border_linewidth = 1,
-#                                  facet_wrap_var = tissue_var,
-#                                  coord_equal = TRUE,
-#                                  legend_position = "none",
-#                                  x_lab = NULL, y_lab = NULL, title = "Cell coordinates in XY space, colored by cluster")
-# DSPexportPlot(plot, path_out = output_dir_pubs, filename = "cell_coords_cluster", dpi = 600, png_width = NULL, png_height = NULL, png_unit = "mm")
+# Plot the cell locations in 2D space as in the tissue.
+# Extract cell metadata.
+cell_coords <- seu.obj.clustered@meta.data %>% .[,c(dimension_name_vars,
+                                                   slide_name_var,
+                                                   tissue_var,
+                                                   "seurat_clusters")]
+head(cell_coords) %>% View
+
+# Plot clusters.
+plot <- cell_coords %>% ggplot(aes(x = !!as.name(dimension_name_vars[1]), 
+                                   y = !!as.name(dimension_name_vars[2]),
+                                   color = seurat_clusters
+                                   )) 
+plot <- DSPplotScatter(plot,
+                       point_size = 0.01, point_alpha = 0.05, geom_jitter = TRUE,
+                       panel_border_color = "black", panel_border_linewidth = 1,
+                       facet_wrap_var = tissue_var,
+                       coord_equal = TRUE,
+                       legend_position = "none",
+                       x_lab = NULL, y_lab = NULL, title = "Cell coordinates in XY space, colored by cluster")
+DSPexportPlot(plot, path_out = output_dir_pubs, filename = "cell_coords_cluster", dpi = 600, png_width = NULL, png_height = NULL, png_unit = "mm")
 
 ## Marker identification --------------------------------------
 seu.obj.clustered.downsamp <- subset(seu.obj.clustered, downsample = downsampling_nn, seed = random_seed)
