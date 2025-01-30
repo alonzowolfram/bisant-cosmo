@@ -6,6 +6,9 @@ channels:
   - tiledb
 dependencies: 
   - bioconda::snakemake=8.27.1 # Snakemake, a workflow (pipeline) management system. 
+  - bioconda::bioconductor-singlecellexperiment=1.28.0 # S4 classes for single-cell data. Required by InSituType.
+  - bioconda::bioconductor-sparsematrixstats=1.18.0 # Summary statistics for rows and columns of sparse matrices. Required by InSituType.
+  - bioconda::bioconductor-summarizedexperiment=1.36.0 # A container (S4 class) for matrix-like assays. Required by InSituType.
   - conda-forge::python=3.11.3 # Python.
   - conda-forge::leidenalg=0.10.2 # Leiden algorithm used in unsupervised clustering. 
   - conda-forge::r-base=4.3.1 # R.
