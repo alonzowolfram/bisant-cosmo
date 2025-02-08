@@ -118,7 +118,7 @@ for(i in 1:length(slide_names)) {
   # This will be taken from the raw files directories.
   # Check that the current slide has run summary data. 
   path_regex <- paste0(slide_name, "\\/.+\\/RunSummary\\/Run_.+_ExptConfig\\.txt$") # Regex for the path to the ExptConfig.txt file. # 2025/02/08: $ added after .txt because sometimes there are >1 files.
-  run_sum_path <- list.files(run_summaries_dir, full.names = TRUE, recursive = TRUE) %>% regexPipes::grep(path_regex, value = TRUE)
+  run_sum_path <- list.files(run_summaries_dir, full.names = TRUE, recursive = TRUE) %>% regexPipes::grep(path_regex, value = TRUE) %>% .[1]
   stopifnot("ExptConfig.txt file not found for this slide" = 
               length(run_sum_path) > 0)
   # Read in the first line from the file, then extract the run ID.
@@ -182,6 +182,7 @@ metadata$uniqueFOV <- paste0(metadata[[slide_name_var]], ":", metadata[[fov_name
 message("Isolating negative control matrices.")
 neg_counts <- counts[, base::grepl("Negative", colnames(counts))]
 false_counts <- counts[, base::grepl("SystemControl", colnames(counts))]
+if(ncol(neg_counts) < 1) warning("Warning: no negative counts.")
 
 # NEW, as of 2024/11/03.
 # Isolate bacterial counts:
@@ -200,7 +201,8 @@ counts <- counts[, !base::grepl("Negative", colnames(counts)) &
 # Build a new Seurat object.
 message("Building new Seurat object.")
 seu.obj <- CreateSeuratObject(counts = t(counts), assay = 'RNA')
-seu.obj[["negprobes"]] <- CreateAssayObject(counts = t(neg_counts)) # https://rdrr.io/github/igordot/scooter/src/R/import.R, add_seurat_assay
+# Check if there are any negative probes before creating a new assay object for it. 
+if(ncol(neg_counts) > 0) seu.obj[["negprobes"]] <- CreateAssayObject(counts = t(neg_counts)) # https://rdrr.io/github/igordot/scooter/src/R/import.R, add_seurat_assay
 # Check if there are any bacterial probes before creating a new assay object for it.
 if(length(intersect(old_counts_colnames, bacterial_probes)) > 0) seu.obj[["bacprobes"]] <- CreateAssayObject(counts = t(bac_counts))
 seu.obj@meta.data <- metadata
