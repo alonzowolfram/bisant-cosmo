@@ -117,7 +117,7 @@ for(i in 1:length(slide_names)) {
   # 2024/10/18: add a column for run ID.
   # This will be taken from the raw files directories.
   # Check that the current slide has run summary data. 
-  path_regex <- paste0(slide_name, "\\/.+\\/RunSummary\\/Run_.+_ExptConfig\\.txt") # Regex for the path to the ExptConfig.txt file.
+  path_regex <- paste0(slide_name, "\\/.+\\/RunSummary\\/Run_.+_ExptConfig\\.txt$") # Regex for the path to the ExptConfig.txt file. # 2025/02/08: $ added after .txt because sometimes there are >1 files.
   run_sum_path <- list.files(run_summaries_dir, full.names = TRUE, recursive = TRUE) %>% regexPipes::grep(path_regex, value = TRUE)
   stopifnot("ExptConfig.txt file not found for this slide" = 
               length(run_sum_path) > 0)
