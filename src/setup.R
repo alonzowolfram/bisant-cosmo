@@ -49,7 +49,85 @@ appendSlashToPath <- function(x) {
 }
 ## Function to check if variable is NULL or empty.
 flagVariable <- function(x) {
-  return(is.null(x) || x=="")
+  return(is.null(x) || sum(x=="") >= length(x))
+}
+
+## Function to recursively assign variables.
+assignVarsEnv <- function(yaml_list, env = .GlobalEnv) { # env = new.env()
+  assignRecursive <- function(lst, parent_keys = NULL) {
+    for (key in names(lst)) {
+      full_key <- paste(c(parent_keys, key), collapse = "_")
+      value <- lst[[key]]
+      
+      if (is.list(value)) {
+        assignRecursive(value, c(parent_keys, key))
+      } else {
+        assign(key, value, envir = env)
+      }
+    }
+  }
+  
+  assignRecursive(yaml_list)
+  # return(env)  # Return the environment so you can use it
+}
+
+# Function to validate and process config variables.
+validateProcessConfig <- function(config_var_metadata) { 
+  config_vars <- read.csv(config_var_metadata, stringsAsFactors = FALSE)
+  error_msg_list <- list()
+  
+  for (i in seq_len(nrow(config_vars))) {
+    var_name <- config_vars$variable[i]
+    required <- as.logical(config_vars$required[i])
+    default_value <- config_vars$default_value[i]
+    split_string <- as.logical(config_vars$split_string[i])
+    
+    # Debugging prints
+    message(paste("Processing:", var_name))
+    message(paste(" - Required:", required))
+    message(paste(" - Default Value (raw):", default_value))
+    message(paste(" - Exists in .GlobalEnv?", exists(var_name, envir = .GlobalEnv, inherits = FALSE)))
+    
+    # Convert default_value to the appropriate type
+    if (!is.na(default_value) && default_value != "") {
+      if (grepl("^\\d+$", default_value)) {  
+        # Integer check (only digits, no decimal)
+        default_value <- as.integer(default_value)
+      } else if (grepl("^\\d+\\.\\d+$", default_value)) {  
+        # Decimal check (digits + decimal point)
+        default_value <- as.numeric(default_value)
+      }
+    }
+    
+    message(paste(" - Default Value (converted):", default_value, "Type:", typeof(default_value)))
+    
+    if (exists(var_name, envir = .GlobalEnv, inherits = FALSE)) { 
+      value <- get(var_name, envir = .GlobalEnv)
+      message(paste(" - Current Value:", value))
+      
+      if (required && flagVariable(value)) {
+        error_msg_list[[var_name]] <- paste("Input missing for", var_name)
+      }
+      
+      if (!required && flagVariable(value) && default_value != "") {
+        assign(var_name, default_value, envir = .GlobalEnv)
+        message(paste(" - Assigned default:", var_name, "=", get(var_name, envir = .GlobalEnv)))
+      }
+      
+      if (!flagVariable(value) && split_string) {
+        assign(var_name, strsplit(value, ",")[[1]], envir = .GlobalEnv)
+        message(paste(" - Split and assigned:", get(var_name, envir = .GlobalEnv)))
+      }
+      
+    } else {
+      if (!required && default_value != "") {
+        assign(var_name, default_value, envir = .GlobalEnv)
+        message(paste(" - Assigned default:", var_name, "=", get(var_name, envir = .GlobalEnv)))
+      }
+    }
+  }
+  
+  return(error_msg_list)
 }
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -64,200 +142,14 @@ cl_args <- commandArgs(TRUE)
 library(yaml) # For reading in YAML documents.
 config <- yaml::read_yaml(cl_args[1])
 
-## Load the raw variables.
-## Project
-### Meta
-meta <- config$project$meta
-project_name <- meta$project_name
-run_name <- meta$run_name
-### Technical
-path_to_python <- config$project$technical$path_to_python
-## Data
-data <- config$data
-flat_file_dir <- data$flat_file_dir
-run_summaries_dir <- data$run_summaries_dir
-bacterial_probes <- data$bacterial_probes
-rmd_template_file <- data$rmd_template_file
-
-## Outputs
-# (output_dir read in from command line arguments)
-
-## Experiment
-experiment <- config$experiment
-### General
-general <- experiment$general
-species <- general$species
-random_seed <- general$random_seed
-### Annotation
-annotation <- experiment$annotation
-slide_name_var <- annotation$slide_name_var
-fov_name_var <- annotation$fov_name_var
-dimension_name_vars <- annotation$dimension_name_vars
-total_counts_var <- annotation$total_counts_var
-total_features_var <- annotation$total_features_var
-area_var <- annotation$area_var
-tissue_var <- annotation$tissue_var
-neovariables <- annotation$neovariables
-filter_vars <- annotation$filter_vars
-### QC: general
-general_qc <- experiment$general_qc
-filter_cells <- general_qc$filter_cells
-filter_fovs <- general_qc$filter_fovs
-filter_neg_probes <- general_qc$filter_neg_probes
-filter_targets <- general_qc$filter_targets
-### QC: cells
-cell_qc <- experiment$cell_qc
-min_counts_per_cell <- cell_qc$min_counts_per_cell
-min_features_per_cell <- cell_qc$min_features_per_cell
-proportion_neg_counts <- cell_qc$proportion_neg_counts
-count_dist <- cell_qc$count_dist
-area_outlier_pval <- cell_qc$area_outlier_pval
-max_area <- cell_qc$max_area
-min_signal_strength <- cell_qc$min_signal_strength
-### QC: FOVs
-fov_qc <- experiment$fov_qc
-min_cells_per_fov <- fov_qc$min_cells_per_fov
-path_to_barcodes <- fov_qc$path_to_barcodes
-probe_panel <- fov_qc$probe_panel
-### QC: probes
-probe_qc <- experiment$probe_qc
-neg_probe_outlier_pval <- probe_qc$neg_probe_outlier_pval
-### QC: targets
-target_qc <- experiment$target_qc
-neg_control_probe_quantile_cutoff <- target_qc$neg_control_probe_quantile_cutoff
-detection_over_bg_p_value <- target_qc$detection_over_bg_p_value
-filter_targets_by_neg_control_quantile <- target_qc$filter_targets_by_neg_control_quantile
-filter_targets_by_detection_p_value <- target_qc$filter_targets_by_detection_p_value
-### Normalization
-normalization <- experiment$normalization
-log_transform <- normalization$log_transform
-n_variable_features <- normalization$n_variable_features
-### Batch-effect correction
-batch_effect_correction <- experiment$batch_effect_correction
-correct_batch_effects <- batch_effect_correction$correct_batch_effects
-batch_covariates <- batch_effect_correction$batch_covariates
-### Neighbor-networks clustering
-neighbor_networks <- experiment$neighbor_networks
-jaccard_cutoff <- neighbor_networks$jaccard_cutoff
-cluster_resolution <- neighbor_networks$cluster_resolution
-dist_metric_nn <- neighbor_networks$dist_metric_nn
-downsampling_nn <- neighbor_networks$downsampling_nn
-### UMAP
-umap <- experiment$umap
-n_dims_umap <- umap$n_dims_umap
-n_neighbors_umap <- umap$n_neighbors_umap
-min_dist_umap <- umap$min_dist_umap
-spread_umap <- umap$spread_umap
-dist_metric_umap <- umap$dist_metric_umap
-
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-##                                                                
-## Required parameters ----
-##
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # Check the required parameters passed from the configuration YAML file based on which module we're running.
 current_module <- cl_args[3]
 
-# Set up a list to hold all the error messages. 
-error_msg_list <- list()
-yaml_part <- " In the configuration YAML file, please provide "
-
-### All modules ----
-if(flagVariable(path_to_python)) error_msg_list[["path_to_python"]] <- paste0("[Project settings: Technical]", yaml_part, "a path to the Python binary used by the current conda environment (`cosmx`).")
-
-### Data ----
-required_annotation_elements <- c()
-if(current_module=="data_import_cleaning") {
-  if(flagVariable(flat_file_dir)) error_msg_list[["flat_file_dir"]] <- paste0("[Data]", yaml_part, "the absolute path to the directory containing the CosMx flat files.")
-  if(flagVariable(run_summaries_dir)) error_msg_list[["run_summaries_dir"]] <- paste0("[Data]", yaml_part, "the absolute path to the directory containing the CosMx run summaries.")
-  # if(list(NULL) %in% config$experiment$annotation[required_annotation_elements]) error_msg_list[["path_to_python"]] <- "In the configuration YAML file, please provide values for all experimental annotation column name settings.") # https://stackoverflow.com/questions/12119019/select-multiple-elements-from-a-list
-}
-
-### Experiment ----
-#### General ----
-if(flagVariable(species)) error_msg_list[["species"]] <- paste0("[Experiment: General]", yaml_part, "the species of the experimental organism. The currently allowed values are `Homo sapiens` and `Mus musculus`.")
-#### Annotation ----
-if(flagVariable(slide_name_var)) error_msg_list[["slide_name_var"]] <- paste0("[Experiment: Annotation]", yaml_part, "the name of the column in the metadata containing the slide name.")
-if(flagVariable(fov_name_var)) error_msg_list[["fov_name_var"]] <- paste0("[Experiment: Annotation]", yaml_part, "the name of the column in the metadata containing the FOV name.")
-if(flagVariable(dimension_name_vars)) error_msg_list[["dimension_name_vars"]] <- paste0("[Experiment: Annotation]", yaml_part, "the names of the column in the metadata containing the x- and y-coordinates.")
-if(flagVariable(total_counts_var)) error_msg_list[["total_counts_var"]] <- paste0("[Experiment: Annotation]", yaml_part, "the names of the column in the metadata containing the total counts.")
-if(flagVariable(total_features_var)) error_msg_list[["total_features_var"]] <- paste0("[Experiment: Annotation]", yaml_part, "the names of the column in the metadata containing the total features.")
-if(flagVariable(area_var)) error_msg_list[["area_var"]] <- paste0("[Experiment: Annotation]", yaml_part, "the names of the column in the metadata containing the area.")
-#### FOV QC ----
-if(current_module=="qc") {
-  if(flagVariable(path_to_barcodes)) error_msg_list[["path_to_barcodes"]] <- paste0("[Experiment: FOV QC]", yaml_part, "a path to the RDS file containing the barcodes for the FOVs.")
-  if(flagVariable(probe_panel)) error_msg_list[["probe_panel"]] <- paste0("[Experiment: FOV QC]", yaml_part, "the panel of probes used in the current experiment. Can be one of `Hs_IO`, `Hs_UCC`, `Hs_6k`, `Mm_Neuro`, `Mm_UCC`")
-}
-
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-##                                                                
-## Optional parameters ----
-##
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-# Here we provide default values for parameters that are required by the pipeline
-# but do not necessarily have to be provided by the user in the YAML config file.
-
-### Data ---
-if(flagVariable(rmd_template_file)) rmd_template_file <- "ext/report_template.Rmd"
-### Experiment ----
-#### General ----
-if(flagVariable(random_seed)) random_seed <- 1026
-#### Annotation ----
-if(flagVariable(tissue_var)) tissue_var <- slide_name_var
-#### General QC ----
-if(flagVariable(filter_cells)) filter_cells <- TRUE
-if(flagVariable(filter_fovs)) filter_fovs <- TRUE
-if(flagVariable(filter_neg_probes)) filter_neg_probes <- FALSE
-if(flagVariable(filter_targets)) filter_targets <- FALSE
-#### Cell QC ----
-if(flagVariable(min_counts_per_cell)) min_counts_per_cell <- 200
-if(flagVariable(min_features_per_cell)) min_features_per_cell <- 200
-if(flagVariable(proportion_neg_counts)) proportion_neg_counts <- 0.1
-if(flagVariable(count_dist)) count_dist <- 1
-if(flagVariable(area_outlier_pval)) area_outlier_pval <- 0.01
-if(flagVariable(max_area)) max_area <- 30000
-if(flagVariable(min_signal_strength)) min_signal_strength <- 4
-#### FOV QC ----
-if(flagVariable(min_cells_per_fov)) min_cells_per_fov <- 50
-#### Probe QC ----
-if(flagVariable(neg_probe_outlier_pval)) neg_probe_outlier_pval <- 0.01
-#### Target QC ----
-if(flagVariable(neg_control_probe_quantile_cutoff)) neg_control_probe_quantile_cutoff <- 0.5
-if(flagVariable(detection_over_bg_p_value)) detection_over_bg_p_value <- 0.01
-if(flagVariable(filter_targets_by_neg_control_quantile)) filter_targets_by_neg_control_quantile <- FALSE
-if(flagVariable(filter_targets_by_detection_p_value)) filter_targets_by_detection_p_value <- FALSE
-#### Normalization ----
-if(flagVariable(log_transform)) log_transform <- FALSE
-if(flagVariable(n_variable_features)) n_variable_features <- 1000
-#### Batch-effect correction ----
-if(flagVariable(correct_batch_effects) || flagVariable(batch_covariates)) correct_batch_effects <- FALSE
-#### Neighbor networks and clustering ----
-if(flagVariable(jaccard_cutoff)) jaccard_cutoff <- 0.067
-if(flagVariable(cluster_resolution)) cluster_resolution <- 1.01
-if(flagVariable(dist_metric_nn)) dist_metric_nn <- "euclidean"
-if(flagVariable(downsampling_nn)) downsampling_nn <- 2000
-#### UMAP ----
-if(flagVariable(n_dims_umap)) n_dims_umap <- 30
-if(flagVariable(n_neighbors_umap)) n_neighbors_umap <- 5
-if(flagVariable(min_dist_umap)) min_dist_umap <- 0.005
-if(flagVariable(spread_umap)) spread_umap <- 1
-if(flagVariable(dist_metric_umap)) dist_metric_umap <- "euclidean"
-
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-##                                                                
-## Parameter cleaning and formatting ----
-##
-## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-### Data ----
-if(!flagVariable(bacterial_probes)) bacterial_probes <- bacterial_probes %>% strsplit(",") %>% unlist
-
-### Experiment ---- 
-#### Annotation ----
-if(!flagVariable(dimension_name_vars)) dimension_name_vars <- dimension_name_vars %>% strsplit(",") %>% unlist
-#### Batch-effect correction ----
-if(!flagVariable(batch_covariates)) batch_covariates <- batch_covariates %>% strsplit(",") %>% unlist
+## Load the raw variables.
+config_env <- assignVarsEnv(config)
+## Process the variables.
+config_metadata_path <- "config_variable_metadata.csv"
+error_msg_list <- validateProcessConfig(config_metadata_path)
 
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ##                                                                
@@ -280,6 +172,7 @@ system("which python")
 library(Seurat) # [conda] Handling single-cell data.
 library(rmarkdown) # [conda] Rendering R Markdown reports. 
 library(harmony) # [conda] Batch-effect correction.
+library(InSituType) # [manual] NanoString's in-house cell-typing package.
 
 workflow_system <- cl_args[2]
 if(workflow_system=="Nextflow") {
