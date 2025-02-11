@@ -210,6 +210,83 @@ if(identical(Cells(seu.obj), seu.obj@meta.data$updated_cell_id)) {rownames(seu.o
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
+# Additional metadata -----------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# Only join if both `additional_metadata` and `additional_metadata_join_column` are present. 
+if(!flagVariable(additional_metadata_join_column) && !flagVariable(additional_metadata)) {
+  if(file.exists(additional_metadata)) {
+    # Load the metadata.
+    additional_metadata <- read_csv(additional_metadata)
+    
+    # Check that `additional_metadata_join_column` is present in the metadata. 
+    if((additional_metadata_join_column %in% colnames(additional_metadata)) && (additional_metadata_join_column %in% colnames(seu.obj@meta.data))) {
+      seu.obj@meta.data <- seu.obj@meta.data %>% dplyr::left_join(additional_metadata, by = additional_metadata_join_column)
+      rownames(seu.obj@meta.data) <- seu.obj@meta.data$updated_cell_id
+    }
+  }
+  
+}
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# Filtering -----------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Filter observations by the criteria given in filter_vars, if applicable.
+# filter_vars <- "segment,include,Full ROI,Tumor;Tags,exclude,Stroma"
+
+if(!flagVariable(filter_vars)) {
+  filter_vars <- filter_vars %>% strsplit(";") %>% unlist
+  for(var in filter_vars) {
+    var <- var %>% strsplit(",") %>% unlist
+    if(!(var[1] %in% colnames(seu.obj@meta.data))) {
+      warning(paste0("The variable ", var[1], " is not included in the metadata for this data set. Skipping this variable."))
+      next
+    }
+    
+    var_values <- var[3:length(var)]
+    if((var[2] %>% str_to_lower()) == "include") {
+      cells_to_keep <- rownames(seu.obj@meta.data)[seu.obj@meta.data[[var[1]]] %in% var_values]
+      seu.obj <- subset(seu.obj, cells = cells_to_keep)
+      
+    } else if((var[2] %>% str_to_lower()) == "exclude") {
+      cells_to_keep <- rownames(seu.obj@meta.data)[!(seu.obj@meta.data[[var[1]]] %in% var_values)]
+      seu.obj <- subset(seu.obj, cells = cells_to_keep)
+      
+    } else {
+      warning("Skipping this element of filter_vars. Please enter a value of 'include' or 'exclude' as the second element of filter_vars. And check your spelling!")
+      next
+      
+    }
+    
+  }
+}
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
+# Neovariable generation -----------------------------------------
+#
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# Create the specified neovariables (if provided) and add to the metadata.
+if(!flagVariable(neovariables)) {
+  neovariables <- neovariables %>% .[. != ""]
+  for(neovariable in neovariables) {
+    # Split into its component parts.
+    neovariable_comps <- neovariable %>% strsplit("\\+") %>% unlist
+    
+    # Create the neovariable.
+    neovariable_name <- paste0(neovariable_comps, collapse = "_")
+    seu.obj@meta.data <- seu.obj@meta.data %>% tidyr::unite(!!as.name(neovariable_name), neovariable_comps, remove = FALSE, na.rm = FALSE)
+    # Set the rownames.
+    # https://github.com/satijalab/seurat/issues/3695#issuecomment-731367783 
+    rownames(seu.obj@meta.data) <- seu.obj@meta.data$updated_cell_id
+  }
+}
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#
 # Export to disk -----------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
