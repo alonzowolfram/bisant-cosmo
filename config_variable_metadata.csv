@@ -7,6 +7,8 @@ run_summaries_dir,TRUE,,FALSE
 bacterial_probes,FALSE,,TRUE
 rmd_template_file,FALSE,,FALSE
 previous_run_out_dir,FALSE,,FALSE
+additional_metadata,FALSE,,FALSE
+additional_metadata_join_column,FALSE,,FALSE
 output_dir,FALSE,,FALSE
 species,TRUE,,FALSE
 random_seed,FALSE,1026,FALSE
@@ -18,7 +20,7 @@ total_features_var,TRUE,,FALSE
 area_var,TRUE,,FALSE
 tissue_var,FALSE,,FALSE
 neovariables,FALSE,,TRUE
-filter_vars,FALSE,,TRUE
+filter_vars,FALSE,,FALSE
 pre_qc_mode,FALSE,FALSE,FALSE
 filter_cells,FALSE,TRUE,FALSE
 filter_fovs,FALSE,TRUE,FALSE
