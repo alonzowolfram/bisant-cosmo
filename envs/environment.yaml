@@ -6,9 +6,9 @@ channels:
   - tiledb
 dependencies: 
   - bioconda::snakemake=8.27.1 # Snakemake, a workflow (pipeline) management system. 
-  - bioconda::bioconductor-singlecellexperiment=1.28.0 # S4 classes for single-cell data. Required by InSituType.
-  - bioconda::bioconductor-sparsematrixstats=1.18.0 # Summary statistics for rows and columns of sparse matrices. Required by InSituType.
-  - bioconda::bioconductor-summarizedexperiment=1.36.0 # A container (S4 class) for matrix-like assays. Required by InSituType.
+  - bioconda::bioconductor-singlecellexperiment # S4 classes for single-cell data. Required by InSituType.
+  - bioconda::bioconductor-sparsematrixstats # Summary statistics for rows and columns of sparse matrices. Required by InSituType.
+  - bioconda::bioconductor-summarizedexperiment # A container (S4 class) for matrix-like assays. Required by InSituType.
   - conda-forge::python=3.11.3 # Python.
   - conda-forge::leidenalg=0.10.2 # Leiden algorithm used in unsupervised clustering. 
   - conda-forge::r-base=4.3.1 # R.
@@ -18,6 +18,7 @@ dependencies:
   - conda-forge::r-outliers=0.15 # Collection of tests commonly used for identifying outliers.
   - conda-forge::r-r.utils=2.12.3 # To read gz and bz2 files directly, fread() requires 'R.utils' package.
   - conda-forge::r-rmarkdown=2.29 # Convert .Rmd (Rmarkdown) documents into a variety of formats (HTML, PDF, etc.)
+  - conda-forge::rstudio-desktop=2022.12.0 # RStudio for desktop work.
   - conda-forge::r-seurat=5.0.3 # Analysis of single-cell data.
   - conda-forge::r-tidyverse=2.0.0 # A "grammar" of data manipulation in R.
   - conda-forge::r-yaml=2.3.8 # Reading in YAML files.
