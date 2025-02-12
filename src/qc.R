@@ -6,6 +6,7 @@
 # Setup -----------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 # Source the setup.R file.
 # Note that we cannot use source() directly in Nextflow; see https://stackoverflow.com/questions/76067626/how-to-call-a-function-present-in-a-different-r-script-from-an-r-executable-usin
 # and https://community.seqera.io/t/source-another-r-script-in-the-bin-directory/1059
@@ -25,11 +26,21 @@ if(workflow_system=="Nextflow") {
 raw_data_path <- cl_args[5]
 seu.obj <- readRDS(raw_data_path)
 
+# Check if pre-QC mode is on. 
+# If so, override the other general QC settings.
+if(pre_qc_mode) {
+  filter_cells <- FALSE
+  filter_fovs <- FALSE
+  filter_neg_probes <- FALSE
+  filter_targets <- FALSE
+}
+
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
 # Cell QC ---------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Performing cell QC")
 
 # The two most important variables to filter on are
 # 1) signal (mean transcripts/cell) and
@@ -42,6 +53,7 @@ dim(metadata)
 head(metadata)
 
 ## Minimum total counts ----------------------------------------------------------------
+message("Creating flags based on total counts")
 # Sum up all the counts column-wise.
 system.time({
   col_sums <- colSums(seu.obj@assays$RNA$counts %>% as.matrix, na.rm = TRUE)
@@ -52,7 +64,14 @@ gc() # Run gc() because it uses a lot of memory.
 # Check each element of col_sums if it is >= min_counts_per_cell.
 qcFlagsMinRNACounts <- ifelse(col_sums >= min_counts_per_cell, FALSE, TRUE)
 
+# Plot histogram of total RNA counts.
+metadata %>% 
+  ggplot(aes(x = nCount_RNA + 1)) %>% 
+  DSPplotHistogram(x_lab = "RNA counts + 1 (log10 scale)", y_lab = "Number of cells", vline_xintercept = min_counts_per_cell) %>% 
+  DSPexportPlot(filename = "histogram")
+
 ## Mean counts per cell ----------------------------------------------------------------
+message("Creating flags based on mean counts per cell")
 # For each tissue type (because the mean [counts/cell] will vary by tissue)
 # determine which cells are outliers (either too many or too few counts).
 tissue_types <- seu.obj@meta.data[[tissue_var]] %>% unique
@@ -78,10 +97,15 @@ for(tissue_type in tissue_types) {
 }
 # match(x, y): For each element i of x, where (at what index) does i occur in y?
 # So the element whose order we're trying to match (the standard) should be SECOND (i.e. y).
-outliers <- outliers %>% .[match(rownames(seu.obj@meta.data), names(outliers))]
-if(identical(names(outliers), rownames(seu.obj@meta.data))) {qcFlagsMeanRNACounts <- outliers} else {warning("Double-check the cell IDs.")}
+if(length(outliers) > 0) {
+  outliers <- outliers %>% .[match(rownames(seu.obj@meta.data), names(outliers))]
+  if(identical(names(outliers), rownames(seu.obj@meta.data))) {qcFlagsMeanRNACounts <- outliers} else {warning("Double-check the cell IDs.")}
+} else {
+  qcFlagsMeanRNACounts <- rep(FALSE, length(Cells(seu.obj)))
+}
 
 ## Negative proportions ----------------------------------------------------------------
+message("Creating flags based on proportion of negative probes")
 col_sums_neg <- colSums(seu.obj@assays$negprobes$counts %>% as.matrix, na.rm = TRUE)
 gc()
 total_per_cell_counts <- col_sums + col_sums_neg
@@ -92,6 +116,7 @@ seu.obj@meta.data[["ProportionNegative"]] <- neg_props
 qcFlagsCellPropNeg <- ifelse(neg_props < proportion_neg_counts, FALSE, TRUE)
 
 ## Unique genes/cell ----------------------------------------------------------------
+message("Creating flags based on unique genes/cell")
 # This is not a filtering parameter on AtoMx. It is used for visualization purposes only. 
 # Extract scaled gene-expression matrix.
 # https://r-charts.com/distribution/histogram-boxplot/
@@ -100,6 +125,7 @@ qcFlagsMinFeatures <- ifelse(seu.obj@meta.data$nCount_RNA >= min_features_per_ce
 # if(Sys.info()['sysname']=="Linux" & base::grep("dragon", Sys.info()['nodename'])) { savePlot(genes_per_cell_path) } else {quartz.save(genes_per_cell_path) }
 
 ## Complexity (ratio of counts:unique genes/cell) ----------------------------------------------------------------
+message("Creating flags based on complexity")
 complexity <- seu.obj[["nCount_RNA"]][[1]] / seu.obj[["nFeature_RNA"]][[1]]
 # Add complexity to metadata.
 seu.obj@meta.data[["Complexity"]] <- complexity
@@ -107,6 +133,7 @@ seu.obj@meta.data[["Complexity"]] <- complexity
 qcFlagsCellComplex <- ifelse(complexity >= count_dist, FALSE, TRUE)
 
 ## Signal strength (ratio of [counts:genes]:[counts:negative probes]) ----------------------------------------------------------------
+message("Creating flags based on signal strength")
 # This is not a filtering parameter on AtoMx; it was recommended to us by NanoString.
 n_features <- seu.obj@assays$RNA$counts %>% dim %>% .[1]
 n_features_neg <- seu.obj@assays$negprobes$counts %>% dim %>% .[1]
@@ -117,6 +144,7 @@ seu.obj@meta.data[["SignalStrength"]] <- signal_strength
 qcFlagsSignalStrength <- ifelse(signal_strength >= min_signal_strength, FALSE, TRUE)
 
 ## Area ----------------------------------------------------------------
+message("Creating flags based on area")
 # "The Grubbs" test is designed for assessing one outlier only.If more outliers are suspected, alternative tests, such as the Tietjen-Moore test, are recommended."
 # https://rpubs.com/DragonflyStats/Grubbs-Test-Outliers
 grubbs_area <- outliers::grubbs.test(seu.obj@meta.data$Area, type = 11, opposite = FALSE, two.sided = TRUE)
@@ -138,6 +166,7 @@ if(grubbs_area$p.value < area_outlier_pval) {
 # FOV QC ----------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Performing FOV QC")
 
 ## FOVs flagged ----------------------------------------------------------------
 # https://nanostring-biostats.github.io/CosMx-Analysis-Scratch-Space/posts/fov-qc/
@@ -155,8 +184,14 @@ names(allbarcodes)
 barcodemap <- allbarcodes[[probe_panel]]
 
 slide_names <- metadata[[slide_name_var]] %>% unique
+# Vector to hold IDs of flagged FOVs.
 flagged_fov_unique_ids <- c()
+# List to hold FOV QC results across a range of values for max_prop_loss.
+max_prop_loss_range <- c(0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7)
+fov_qc_res_list <- list()
 for(slide_name in slide_names) {
+  fov_qc_res_list[[slide_name]] <- list()
+  
   # Subset metadata to include only the current slide. 
   metadata_sub <- metadata %>% dplyr::filter(!!as.name(slide_name_var) == slide_name)
   
@@ -170,19 +205,33 @@ for(slide_name in slide_names) {
   # Get the XY dimensions?
   xy <- metadata_sub[,dimension_name_vars]
   
-  # Run FOV QC.
-  system.time(fov_qc_res <- runFOVQC(counts = counts, xy = xy, fov = fov, barcodemap = barcodemap))
-  length(fov_qc_res$flaggedfovs) / length(unique(fov))
-  # user  system elapsed 
-  # 82.884  13.316  72.550 
-  mapFlaggedFOVs(fov_qc_res)
+  # If pre-QC mode is on, run FOV QC across a range of values for max_prop_loss.
+  if(pre_qc_mode) {
+    for(max_prop_loss_i in max_prop_loss_range) {
+      fov_qc_res_list[[slide_name]][[paste0("max_prop_loss_", max_prop_loss_i)]] <- runFOVQC(counts = counts, xy = xy, fov = fov, barcodemap = barcodemap, max_prop_loss = max_prop_loss_i)
+    }
+    
+    # Unique identifiers of flagged FOVs.
+    flagged_fov_unique_ids <- c(flagged_fov_unique_ids, fov_qc_res_list[[slide_name]][[paste0("max_prop_loss_", 0.3)]]$flaggedfovs)
+    # paste0("s", metadata$slide_ID, "_f", metadata$fov)
+    
+  } else {
+    # Run FOV QC for the user-provided max_prop_loss value.
+    system.time(fov_qc_res <- runFOVQC(counts = counts, xy = xy, fov = fov, barcodemap = barcodemap, max_prop_loss = max_prop_loss))
+    length(fov_qc_res$flaggedfovs) / length(unique(fov))
+    # user  system elapsed 
+    # 82.884  13.316  72.550 
+    mapFlaggedFOVs(fov_qc_res)
+    
+    # Unique identifiers of flagged FOVs.
+    flagged_fov_unique_ids <- c(flagged_fov_unique_ids, fov_qc_res$flaggedfovs)
+    # paste0("s", metadata$slide_ID, "_f", metadata$fov)
+  }
   
+  # Free up memory. 
   rm(metadata_sub, counts, fov, xy)
   gc()
   
-  # Unique identifiers of flagged FOVs.
-  flagged_fov_unique_ids <- c(flagged_fov_unique_ids, fov_qc_res$flaggedfovs)
-  # paste0("s", metadata$slide_ID, "_f", metadata$fov)
 }
 
 # Now, using flagged_fov_unique_ids, set qcFlagsFOV.
@@ -221,6 +270,8 @@ if(grubbs_neg_probe$p.value < neg_probe_outlier_pval) {
 # Target QC -------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Performing target QC")
+
 # We can _inspect_ the (gene:count):(negative probe:count) ratio to see if it is >= 4,
 # but in general, genes (targets) should not be _removed_.
 
@@ -274,6 +325,7 @@ if(filter_targets_by_neg_control_quantile & !filter_targets_by_detection_p_value
 # Cell and FOV flagging -------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Performing cell and FOV flagging")
 
 ## Cell QC ----------------------------------------------------------------
 # Add cell QC flags.
@@ -294,6 +346,8 @@ seu.obj$qcFlagsFOV <- qcFlagsFOV
 # Filtering -------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Filtering data")
+
 # If filter_neg_probes is TRUE, filter out flagged negative probes. 
 # https://github.com/satijalab/seurat/issues/321
 if(filter_neg_probes) {
@@ -338,6 +392,7 @@ gc()
 # QC table (cells and FOVs) -------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Creating QC table")
 
 # Run Brenda's function (calculate_qc_stats(), in helper_functions.R)
 # The function calculate_qc_stats() takes as input a data frame
@@ -352,11 +407,14 @@ stats_df <- calculate_qc_stats(seu.obj@meta.data, total_cells_post_qc = nrow(seu
 # Export to disk -------------------------------------------
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+message("Exporting results to disk")
+
 # Save Seurat objects.
 saveRDS(seu.obj.filt, paste0(output_dir_rdata, "seuratObject_filtered.rds")) # Filtered data. 
 # Save metrics.
 saveRDS(stats_df, paste0(output_dir_rdata, "qc_metrics.rds"))
 saveRDS(seu.obj@meta.data, paste0(output_dir_rdata, "flagged_metadata_raw.rds")) # Raw metadata but with flags.
+saveRDS(fov_qc_res_list, paste0(output_dir_rdata, "fov_qc_res_list.rds")) # A list containing FOV QC res at different values of max_prop_loss.
 # Save negative probes.
 saveRDS(neg_probes_filt, paste0(output_dir_rdata, "neg-probes_filtered.rds"))
 
