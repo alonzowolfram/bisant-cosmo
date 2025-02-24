@@ -255,9 +255,9 @@ dev.off()
 
 # Plot in space
 # Will need to do one plot for each slide
-for(slide_name in unique(seu.obj.celltyping@meta.data$Slide)) {
+for(slide_name in unique(seu.obj.celltyping@meta.data[[slide_name_var]])) {
   meta_sub <- seu.obj.celltyping@meta.data %>% 
-    dplyr::filter(Slide == slide_name)
+    dplyr::filter(!!as.name(slide_name_var) == slide_name)
   
   # Extract global XY coordinates from metadata
   xy <- as.matrix(meta_sub[, dimension_name_vars])
