@@ -89,6 +89,27 @@ onsuccess:
     # Create the report. 
     os.system("Rscript src/make_report.R " + config_path[0] + " " + workflow_system[0] + " " + "make_report" + " " + output_path[0] + " " + R_file[0] + " " + project_directory[0] + " 1> " + out[0] + " 2> " + err[0])
 
+rule cell_typing:
+    input:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_UMAP.rds"
+    output:
+        R_file = OUTPUT_PATH + "Rdata/seuratObject_celltyping.rds",
+        cluster_markers = OUTPUT_PATH + "tabular/InSituType-semisup-cluster-markers.csv"
+    params:
+        workflow_system = WORKFLOW_SYSTEM,
+        script = "src/cell_typing.R",
+        output_path = OUTPUT_PATH,
+        current_module = "cell_typing",
+        config_path = CONFIG_PATH,
+        project_directory = PROJECT_DIRECTORY
+    log:
+        out = OUTPUT_PATH + "logs/cell_typing.out",
+        err = OUTPUT_PATH + "logs/cell_typing.err"
+    shell:
+        """
+        Rscript {params.script} {params.config_path} {params.workflow_system} {params.current_module} {params.output_path} {input.R_file} {params.project_directory} 1> {log.out} 2> {log.err}
+        """
+
 rule umap:
     input:
         R_file = OUTPUT_PATH + "Rdata/seuratObject_clustered.rds"

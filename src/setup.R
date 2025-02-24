@@ -169,10 +169,12 @@ system("which python")
 ##
 ## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # if(Sys.info()['sysname']=="Linux" & base::grep("dragon", Sys.info()['nodename'])) .libPaths("/home/lwfong/R/ubuntu/4.3.1")
-library(Seurat) # [conda] Handling single-cell data.
-library(rmarkdown) # [conda] Rendering R Markdown reports. 
-library(harmony) # [conda] Batch-effect correction.
-library(InSituType) # [manual] NanoString's in-house cell-typing package.
+library(Seurat) # [conda] Handling single-cell data
+library(rmarkdown) # [conda] Rendering R Markdown reports
+library(here) # [conda] 
+library(harmony) # [conda] Batch-effect correction
+library(InSituType) # [manual] NanoString's in-house cell-typing package
+library(pheatmap) # [conda] Heatmaps (for post-cell-typing flight maps)
 
 workflow_system <- cl_args[2]
 if(workflow_system=="Nextflow") {
