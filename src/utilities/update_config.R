@@ -2,11 +2,14 @@
 
 # Load necessary libraries
 library(yaml)
+library(tidyverse)
 
 # Get arguments from command line
 args <- commandArgs(trailingOnly = TRUE)
 master_yaml <- args[1] # Template YAML file
-project_yaml_list <- args[2] # Vector of YAML files to be configured according to the master YAML file
+project_yaml_list <- args[2] # Vector of YAML files to be configured according to the master YAML file, values separated with commas
+# Split `project_yaml_list`
+project_yaml_list <- project_yaml_list %>% strsplit(",") %>% unlist
 
 trimTrailingWhitespace <- function(x) {
   sub("[ \t]+$", "", x)
@@ -59,6 +62,7 @@ mergeConfig <- function(master_file, project_file) {
   writeLines(updated_lines, project_file)
 }
 
+message("Updating YAML files")
 for (project_yaml in project_yaml_list) {
   mergeConfig(master_yaml, project_yaml)
 }
