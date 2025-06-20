@@ -607,90 +607,19 @@ experiment:
     # We recommend "x_adj,y_adj", the adjusted coordinates created in the pre-DE module.
     dimension_name_vars_sa: x_adj,y_adj
     
-    # [Required] [Character string] The name of the variables in the metadata containing Cartesian (x-y) coordinates.
-    # Separate the names with a comma (,).
-    clin_data_cols: 
-    
-    # [Optional] Name of variable in metadata giving grouping by which to perform niche analysis.
+    # [Optional] Name of variable in metadata giving grouping by which to perform nearest-neighbor profiling.
     # This will usually be something like cell type.
     # If not given, will default to `InSituType_clusters`.
-    niche_cell_clust_var:
+    nn_cell_clust_var:
     
-    # [Optional] How a cell's neighbors should be defined when performing niche analysis:
+    # [Optional] How a cell's neighbors should be defined when performing nearest-neighbor profiling:
     # `radius`: all cells within the provided radius
     # `k`: The _k_ nearest cells, regardless of how far away they are
     # If not given, will default to `radius`.
-    niche_neighbor_type:
+    nn_type:
     
-    # [Required] The cutoff value corresponding to `niche_neighbor_type`; 
-    # if `niche_neighbor_type` is `radius`, then `niche_neighbor_cutoff` is the radius within which cells can be considered neighbors; the units of the radius will match those of the dimensions provided by `dimension_name_vars_sa`;
-    # if `niche_neighbor_type` is `k`, then `niche_neighbor_cutoff` is the number of closest cells that will be considered a given cell's neighbor
-    niche_neighbor_cutoff:
-    
-    # [Optional] The number of niches (k-means clusters) to cluster cells into, in a given FOV.
-    # If not provided, the pipeline will automatically determine the optimal number of niches for each FOV.
-    niche_k_means: 
-    
-    # [Optional] 
-    
-    # [Required] The cutoff value corresponding to `niche_neighbor_type`; 
-    # [Optional] Name of variable in metadata giving grouping by which to perform colocalization for bi- and univariate nearest neighbors G(r).
-    # This will usually be something like cell type.
-    # If not given, nearest neighbors G(r) will not be calculated.
-    coloc_cell_clust_var:
-    
-    # [Optional] Upper end of the range of radii to use in calculating summary functions for univariate nearest neighbors G(r).
-    # The units of this will be whatever units are used by the coordinates given by `dimension_name_vars` above.
-    # The lower end of the range will always be 0.
-    # If not given, univariate nearest neighbors G(r) will not be calculated.
-    uni_g_r_range_max:
-    
-    # [Optional] The number of permutations to use when calculating univariate nearest neighbors G(r).
-    # Increasing the number of permutations will increase the runtime.
-    # If not given, will be set to 100.
-    n_perm_uni_g:
-    
-    # [Optional] The cell types for which to calculate bivariate nearest neighbors G(r).
-    # The cell types given need to be values of the variable given by `bi_coloc_cell_clust_var`.
-    # You have two options for how to provide these values:
-    # 1) As a single vector; separate the elements of the vector with commas (`,`).
-    # All possible doublet combinations of the elements in the vector will be assessed. 
-    # For example, cell_type_A,cell_type_B,cell_type_C
-    # 2) As two vectors; separate the vectors with a semicolon (`;`)
-    # and the elements of the vectors with commas (`,`).
-    # All possible doublet combinations of the elements in the first vector × the elements in the second vector will be created.
-    # For example, cell_type_A,cell_type_B,cell_type_C;cell_type_D,cell_type_E,cell_type_F
-    # If not given, bivariate nearest neighbors G(r) for all possible doublet combinations of the cell types given by `bi_coloc_cell_clust_var` will be calculated.
-    # Please note that this may dramatically increase the runtime.
-    bi_g_cell_types: 
-    
-    # [Optional] Upper end of the range of radii to use in calculating summary functions for bivariate nearest neighbors G(r).
-    # The units of this will be whatever units are used by the coordinates given by `dimension_name_vars` above.
-    # The lower end of the range will always be 0.
-    # If not given, bivariate nearest neighbors G(r) will not be calculated.
-    bi_g_r_range_max:
-    
-    # [Optional] The number of permutations to use when calculating bivariate nearest neighbors G(r).
-    # Increasing the number of permutations will increase the runtime.
-    # If not given, will be set to 100.
-    n_perm_bi_g:
-    
-    # [Optional] The path to the CSV file containing the ligand-receptor interactions to be queried
-    # If not given, ligand-receptor analysis will not be performed
-    # Each row is one ligand-receptor interaction for one pair of cell types
-    # The columns should NOT be named in the input CSV file, as the pipeline will automatically assign column names
-    # The first column is the name of the receptor as given in the table linking receptors to TFs (usually `receptor_id` in `tf_input`, see below)
-    # The second column is the genes that make up the receptor; if the receptor is a monomer, simply enter the gene name (HGNC);
-    # if the receptor is a multimer, enter all the gene names (HGNC) that make up the complex, separated with a plus sign ("+")
-    # The third column is the genes that make up the ligand; if the ligand is a monomer, simply enter the gene name (HGNC);
-    # if the ligand is a multimer, enter all the gene names (HGNC) that make up the complex, separated with a plus sign ("+")
-    # The fourth column is the cell type of the receptor-expressing cell, where the cell types are given by the column in the metadata named by the value in the sixth column of this CSV file
-    # The fifth column is the cell type of the ligand-expressing cell, where the cell types are given by the column in the metadata named by the value in the sixth column of this CSV file
-    # The sixth column is the name of the column in the metadata containing the cell types, in which the values given in the fourth and fifth columns should be found. Each row can have a different value, i.e., use a different column from the metadata
-    # The seventh column is the radius (maximum distance) between two cells for those cells to be considered neighbors. The units will be the same as those of the x- and y-coordinates given by `dimension_name_vars`.
-    lr_interact_table_file: 
-    
-    # [Optional] The path to the file containing the receptor-TF interactions
-    # If not given, will default to the one found at "ext/.csv"
-    transcription_factor_input_file:
+    # [Required] The cutoff value corresponding to `nn_neighbor_type`; 
+    # if `nn_type` is `radius`, then `nn_cutoff` is the radius within which cells can be considered neighbors; the units of the radius will match those of the dimensions provided by `dimension_name_vars_sa`;
+    # if `nn_type` is `k`, then `nn_cutoff` is the number of closest cells that will be considered a given cell's neighbor
+    nn_cutoff:
     

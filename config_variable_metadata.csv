@@ -84,3 +84,6 @@ pathway_table_file,FALSE,,FALSE
 individual_pathways,FALSE,,TRUE
 n_max_pathways,FALSE,15,FALSE
 dimension_name_vars_sa,TRUE,,TRUE
+nn_cell_clust_var,FALSE,InSituType_clusters,FALSE
+nn_type,FALSE,radius,FALSE
+nn_cutoff,TRUE,,FALSE
