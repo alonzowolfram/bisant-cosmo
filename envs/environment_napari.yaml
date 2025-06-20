@@ -1,0 +1,12 @@
+name: napari-cosmx
+channels:
+  - conda-forge
+  - bioconda
+  - R
+  - tiledb
+dependencies: 
+  - conda-forge::python=3.9.20 # Python.
+  - conda-forge::numpy>=1.23,<2 # NumPy <2 required for latest version of Napari (0.4.17.3)
+  - conda-forge::pandas
+  - conda-forge::pyqt
+ 

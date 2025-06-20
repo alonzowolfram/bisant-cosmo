@@ -1,0 +1,696 @@
+# =================================================================================================
+#     Project settings
+# =================================================================================================
+# Project variables.
+project:
+
+  # ----------------------------------------------------------------------
+  #     Meta-variables
+  # ----------------------------------------------------------------------
+  # Variables such as the project name.
+  meta:
+
+    # [Optional] The name of the project. 
+    # You can name it anything you'd like, but we recommend a descriptive name including
+    # a project identifier, if it has one. 
+    # If you provide a project name and/or a run name and not an output directory (output_dir, below),
+    # the pipeline will use the project name in building an output directory:
+    # [{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}
+    project_name:
+
+    # [Optional] A name for this run.
+    # You can name it anything you'd like. 
+    # For example, if you're just running the QC, maybe name it
+    # "QC" or something like that.
+    # If provided, it will be used in naming some of the files.
+    # You can leave it blank, too.
+    # If you provide a project name and/or a run name and not an output directory (output_dir, below),
+    # the pipeline will use the project name in building an output directory:
+    # [{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}
+    run_name:
+
+  # ----------------------------------------------------------------------
+  #     Technical
+  # ----------------------------------------------------------------------
+  technical:
+
+    # [Required] Path to Python binary used by your `cosmx` conda environment.
+    # Usually something like `~/miniconda3/envs/cosmx/python`
+    path_to_python:
+    
+    # [Required] Path to scratch folder. 
+    # This will be used to store intermediate results only and does not need to be a file system that is regularly backed up
+    path_to_scratch:
+  
+# =================================================================================================
+#     Inputs
+# =================================================================================================
+# Paths to input data. Use absolute (full) paths, not relative paths.
+data:
+
+  # [Required] [Character string] Absolute path to the directory containing the flat files.
+  flat_file_dir:
+
+  # [Required] [Character string] Absolute path to the directory containing the run summaries, usually in a folder called `rawFiles`.
+  # This is used to distinguish between runs when slides from multiple runs are being analyzed.
+  run_summaries_dir:
+
+  # [Optional] [Character string] Names of bacterial probes in expression data.
+  # If provided, a separate slot will be created in the RDS object for the bacterial counts.
+  # Separate probe names with commas (,).
+  bacterial_probes:
+  
+  # [Optional] [Character string] Absolute path to the RMarkdown (.Rmd) file to be used as a template in generating the output HTML file.
+  # If not provided, the pipeline will use the default Rmd template provided in ext/report_template.Rmd. 
+  rmd_template_file: 
+  
+  # [Optional] Absolute path to an output folder from a previous bisantine-cosmo run.
+  # Allows the pipeline to "pick up" from where you left off. 
+  # If provided, the pipeline will use the output Rds files from this folder.
+  previous_run_out_dir:
+  
+  # [Optional] Absolute path to CSV file with additional metadata. 
+  additional_metadata:
+  
+  # [Optional] Column name on which to join the CSV file given by `additional_metadata` and the metadata provided in the flat files.
+  # If not provided, the CSV file given by `additional_metadata` will be ignored. 
+  additional_metadata_join_column:
+
+# =================================================================================================
+#     Outputs
+# =================================================================================================
+# Output paths, using absolute file paths.
+output:
+
+  # [Optional] [Character string] Absolute path to the directory in which to save output files.
+  # If not provided, the pipeline will create the following directory and save save output files to it:
+  #   ./out/[{project_name}_][{run_name}_]{YEAR}-{MONTH}-{DAY}-{HOUR}-{MINUTE}/
+  # For further information about the nomenclature of output files, see the ./docs folder.
+  output_dir:
+
+# =================================================================================================
+#     Experiment settings
+# =================================================================================================
+# Experiment settings.
+experiment:
+
+  # ----------------------------------------------------------------------
+  #     General settings
+  # ----------------------------------------------------------------------
+  general: 
+
+    # [Required] [Character string] Species name (required for pathway analysis and immune deconvolution).
+    # The following values are allowed: c("Homo sapiens", "Mus musculus")
+    species: Homo sapiens
+
+    # [Optional] [Integer] Random seed to be used in algorithms that use stochastic processes (e.g. UMAP).
+    # If not provided, it will default to 1026. 
+    random_seed: 1026
+
+  # ----------------------------------------------------------------------
+  #     Annotation column names
+  # ----------------------------------------------------------------------
+  annotation: 
+
+    # [Required] [Character string] The name of the variable in the metadata used to identify slides _within_ a run.
+    slide_name_var: Run_Tissue_name
+
+    # [Required] [Character string] The name of the variable in the metadata used to identify FOVs _within_ a slide.
+    fov_name_var: fov
+
+    # [Required] [Character string] The name of the variables in the metadata containing Cartesian (x-y) coordinates.
+    # Separate the names with a comma (,).
+    dimension_name_vars: CenterX_global_px,CenterY_global_px
+    
+    # [Required] [Character string] The units of the cell coordinates (given by `dimension_name_vars`).
+    # Can be one of the following: "px" (pixels), "um" (microns, μm), "mm" (millimeters).
+    coordinate_units: px
+    
+    # [Required] [Character string] The name of the variable in the metadata containing the total counts for a cell.
+    total_counts_var: nCount_RNA
+    
+    # [Required] [Character string] The name of the variable in the metadata containing the total features (unique genes/molecular species) for a cell.
+    total_features_var: nFeature_RNA
+    
+    # [Required] [Character string] The name of the variable in the metadata containing the area of a cell.
+    area_var: Area
+
+    # [Optional] [Character string] The name of the variable in the metadata used to identify tissues.
+    # If not given, will default to the value given by `slide_name_var` above.
+    tissue_var: Run_Tissue_name
+
+    # [Optional] [Character string] Neo-variables, created by pasting together two or more existing variables in the sample annotation.
+    # Use a plus sign ("+") to combine variables. 
+    # Separate each neo-variable with a comma (",").
+    # These neo-variables can then be used in downstream analyses;
+    # the names of these neo-variables will be the original names, separated by an underscore ("_").
+    neovariables:
+
+    # [Optional] [Character string] Filtering variables.
+    # For each variable, follow this pattern:
+    # var1,include,value1,value2,...
+    # where var1 = the name of the variable to subset on,
+    # include = can be 1 of either "include" or "exclude", where the following values are either included or excluded,
+    # value1,value2,...,valuen = values of var1 to either include or exclude (depending on whether "include" or "exclude" is specified).
+    # Separate multiple variables with semicolons, e.g.
+    # var2,include,value1,value2,...;var2,exclude,value1,value2,...
+    filter_vars: 
+
+  # ----------------------------------------------------------------------
+  #     General QC settings
+  # ----------------------------------------------------------------------
+  general_qc:
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to run QC in pre-QC mode. 
+    # In pre-QC mode, QC metrics will be calculated but no filtering will be performed.
+    # If TRUE, this option overrides all other options in the general_qc section (filter_cells, filter_fovs, filter_neg_probes, filter_targets).
+    # If not provided, will default to FALSE.
+    pre_qc_mode: FALSE
+    
+    # [Optional] [Boolean TRUE or FALSE] Whether to filter cells (TRUE). 
+    # If TRUE, cells that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, cells that do not pass QC cutoffs will be flagged but not removed.
+    # If not provided, will default to TRUE.
+    filter_cells: TRUE
+
+    # [Optional] [Boolean TRUE or FALSE] Whether to filter FOVs (TRUE). 
+    # If TRUE, FOVs that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, FOVs that do not pass QC cutoffs will be flagged but not removed.
+    # If not provided, will default to TRUE.
+    filter_fovs: TRUE
+
+    # [Optional] [Boolean TRUE or FALSE] Whether to filter negative probes (FALSE). 
+    # If TRUE, negative probes that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, negative probes that do not pass QC cutoffs will be flagged but not removed.
+    # If not provided, will default to FALSE.
+    filter_neg_probes: FALSE
+
+    # [Optional] [Boolean TRUE or FALSE] Whether to filter certain genes (FALSE). 
+    # If TRUE, genes that do not pass QC cutoffs will be removed from the data set.
+    # If FALSE, genes that do not pass QC cutoffs will be flagged but not removed.
+    # If not provided, will default to FALSE.
+    filter_targets: FALSE
+
+  # ----------------------------------------------------------------------
+  #     16S QC settings
+  # ----------------------------------------------------------------------
+  # [Optional] [Character string] Names of bacterial probes in expression data for which to generate histograms.
+  # The names provided should appear in the names given in `bacterial_probes` above.
+  # If provided, one histogram per slide will be generated, with the sum of the bacterial counts of all probes given in `bacterial_probes_histogram` taken for each cell.
+  # Separate probe names with commas (,).
+  # If not provided, then all probes in `bacterial_probes` will be used, if provided.
+  bacterial_probes_histogram: 
+  
+  # ----------------------------------------------------------------------
+  #     Cell QC settings
+  # ----------------------------------------------------------------------
+  cell_qc:
+  
+    # Settings for cell QC. Defaults are given in parentheses.
+    # We recommend leaving the settings unchanged for the first pass, reviewing the QC outputs,
+    # and then tweaking the settings accordingly for a second pass. 
+
+    # [Optional] [Numeric] Minimum number of counts a cell must have to pass QC (200).
+    # We've found that a value of 200 improves the results of cell typing, but YMMV.
+    # If not provided, will default to 200.
+    min_counts_per_cell: 200
+
+    # [Optional] [Numeric] Minimum number of unique genes a cell must have to pass QC (200).
+    # If not provided, will default to 200.
+    min_features_per_cell: 200
+
+    # [Optional] [Numeric] MAXIMUM proportion of negative probes a cell must have to pass QC (0.1).
+    # If not provided, will default to 0.1.
+    proportion_neg_counts: 0.1
+
+    # [Optional] [Numeric] Minimum ratio of counts:unique genes a cell must have to pass QC (1).
+    # Values in [1,200] recommended.
+    # If not provided, will default to 1.
+    count_dist: 1
+
+    # [Optional] [Numeric] Grubb's test p-value cutoff for cell area BELOW which cell is flagged as outlier (0.01).
+    # If not provided, will default to 0.01.
+    area_outlier_pval: 0.01
+    
+    # [Optional] [Numeric] Maximum area a cell must have to avoid being flagged.
+    # NOTE: Cells are NOT filtered by this metric; instead, they are filtered using the Grubb's test for area (see above.)
+    # However, this metric is included in the QC summary table.
+    # If not provided, will default to 30000.
+    max_area: 30000
+
+    # [Optional] [Numeric] Minimum signal strength (ratio of [counts:genes]:[counts:negative probes]) a cell must have to pass QC (4).
+    # If not provided, will default to 4.
+    min_signal_strength: 4
+
+  # ----------------------------------------------------------------------
+  #     FOV QC settings
+  # ----------------------------------------------------------------------
+  fov_qc:
+
+    # Settings for fov QC. Defaults are given in parentheses.
+
+    # [Optional] [Numeric] Minimum number of cells an FOV must have to pass QC (50).
+    # If not provided, will default to 50.
+    min_cells_per_fov: 50
+
+    # [Required] [Character string] Path to barcodes, should be an RDS file.
+    # NOTE: the path will be interpreted relative to the current working directory,
+    # i.e., the one in which `bisantine-cosmo.nf` (if Nextflow)
+    # or `Snakefile` (if Snakemake) is located (NOT necessarily the directory in which you called `bisantine-cosmo.nf` or `Snakemake`).
+    path_to_barcodes: ext/barcodes_by_panel.RDS
+
+    # [Required] [Character string] Panel of probes used in the current experiment.
+    # This tells the pipeline which barcodes to use.
+    # Can be one of c("Hs_IO", "Hs_UCC", "Hs_6k", "Mm_Neuro", "Mm_UCC") 
+    probe_panel: Hs_6k
+    
+    # [Optional] [Numeric]
+    # [Optional] [Numeric] Value for max_prop_loss for runFOVQC() function.
+    # According to NanoString, "Maximum loss of efficiency allowed for any bit. E.g., a value of "0.3" means all FOVs with bias <log2(1 - 0.3) will be flagged."
+    # Values must be in the range of [0,1].
+    # If not provided, will default to 0.3.
+    max_prop_loss:
+    
+    # [Optional] [Numeric] Value for max_totalcounts_loss for runFOVQC() function.
+    # According to NanoString, "Maximum loss of total expression allowed for any FOV. E.g., a value of "0.5" means all FOVs with total counts <50% of comparable spatial regions will be flagged."
+    # Values must be in the range of [0,1].
+    # If not provided, will default to 0.3.
+    max_totalcounts_loss:
+
+  # ----------------------------------------------------------------------
+  #     Probe QC settings
+  # ----------------------------------------------------------------------
+  probe_qc:
+
+    # Settings for probe QC. Defaults are given in parentheses.
+    
+    # [Optional] [Numeric] Grubb's test p-value cutoff for negative probe expression BELOW which probe is flagged as outlier (0.01).
+    # If not provided, will default to 0.01
+    neg_probe_outlier_pval: 0.01
+
+  # ----------------------------------------------------------------------
+  #     Target QC settings
+  # ----------------------------------------------------------------------
+  target_qc:
+
+    # Settings for target (gene) QC. Defaults are given in parentheses.
+    
+    # [Optional] [Numeric] Quantile of the means of the counts of negative probes below which to flag (0.5).
+    # If not provided, will default to 0.5
+    neg_control_probe_quantile_cutoff: 0.5
+
+    # [Optional] [Numeric] p-value below which genes are considered to be significantly lower than background (0.01).
+    # (Should we consider seeing which genes are significantly above background?)
+    # If not provided, will default to 0.01.
+    detection_over_bg_p_value: 0.01
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to filter out targets that do not meet the negative control quantile cutoff (FALSE).
+    # If not provided, will default to FALSE.
+    filter_targets_by_neg_control_quantile: FALSE
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to filter out targets that do not meet the detection over background cutoff (FALSE).
+    # If not provided, will default to FALSE.
+    filter_targets_by_detection_p_value: FALSE
+
+  # ----------------------------------------------------------------------
+  #     Normalization settings
+  # ----------------------------------------------------------------------
+  normalization:
+
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to log-transform the expression data after normalization (FALSE).
+    # NOTE: NanoString does not recommend non-linear (including log) transformations.
+    # If not provided, will default to FALSE.
+    log_transform: FALSE
+    
+    # [Optional] The number of variable features to find using FindVariableFeatures() (1000).
+    # If not provided, will default to 2000.
+    n_variable_features: 2000
+
+  # ----------------------------------------------------------------------
+  #     Batch-effect correction settings
+  # ----------------------------------------------------------------------
+  batch_effect_correction:
+  
+    # [Optional] [Boolean TRUE or FALSE] Whether or not to perform batch-effect correction using the harmony package. 
+    # If not provided, will default to FALSE.
+    correct_batch_effects: FALSE
+    
+    # [Optional] The name(s) of the column(s) in the metadata to use as batch covariates when running batch-effect correction.
+    # If multiple covariates are provided, separate each one with a comma (",").
+    # If not provided, batch-effect correction will be skipped. 
+    batch_covariates: 
+    
+  # ----------------------------------------------------------------------
+  #     Neighbor-networks settings
+  # ----------------------------------------------------------------------
+  neighbor_networks:
+    
+    # [Optional] [Numeric] The value of the prune.SNN parameter for Seurat::FindNeighbors().
+    # "Sets the cutoff for acceptable Jaccard index when computing the neighborhood overlap for the SNN construction. 
+    # "Any edges with values less than or equal to this will be set to 0 and removed from the SNN graph. 
+    # "Essentially sets the stringency of pruning (0 — no pruning, 1 — prune everything)."
+    # If not provided, will default to 0.067.
+    jaccard_cutoff: 0.067
+    
+    # [Optional] [Numeric] The value of the clustering parameter for Seurat::FindClusters().
+    # Values above 1.0 will give larger numbers of communities, while values below 1.0 will give smaller numbers.
+    # If not provided, will default to 1.01
+    cluster_resolution: 1.01
+    
+    # [Optional] [Character] The name of the distance metric to use for annoy. 
+    # Options include euclidean, cosine, manhattan, and hamming. 
+    # If not provided, will default to "euclidean".
+    dist_metric_nn: euclidean
+    
+    # [Optional] [Numeric] The number of cells to downsample to when performing marker identification after clustering.
+    # Downsampling allows the computations to run faster. 
+    # Input a negative value to force the algorithm to use all cells when identifying cluster markers (not recommended unless you have a lot of time).
+    # If not provided, will default to 2000.
+    downsampling_nn: 2000
+  
+  # ----------------------------------------------------------------------
+  #     UMAP settings
+  # ----------------------------------------------------------------------
+  umap:
+  
+    # [Optional] [Integer] "Which dimensions to use as input features, used only if features is NULL."
+    # In my experience, this is the most important parameter for controlling how much separation we get in the UMAP.
+    # If not provided, will default to 30.
+    n_dims_umap: 
+     
+    # [Optional] [Integer] "This determines the number of neighboring points used in local approximations of manifold structure. 
+    # "Larger values will result in more global structure being preserved at the loss of detailed local structure. 
+    # "In general this parameter should often be in the range 5 to 50."
+    # If not provided, will default to 5.
+    n_neighbors_umap:
+    
+    # [Optional] [Numeric] "This controls how tightly the embedding is allowed compress points together. 
+    # "Larger values ensure embedded points are moreevenly distributed, while smaller values allow the algorithm to optimise more accurately with regard to local structure. 
+    # "Sensible values are in the range 0.001 to 0.5."
+    # If not provided, will default to 0.005.
+    min_dist_umap: 0.005
+    
+    # [Optional] [Numeric] "The effective scale of embedded points. 
+    # "In combination with min.dist this determines how clustered/clumped the embedded points are."
+    # If not provided, will default to 1.
+    spread_umap: 3
+    
+    # [Optional] [Character] The distance metric used in the input space.
+    # If not provided, will default to "euclidean".
+    dist_metric_umap: euclidean
+    
+    # [Optional] The column in the annotation to use as a primary grouping variable.
+    # If provided, points on the UMAP dimension reduction graphs
+    # will be colored by group.
+    # You can provide multiple values, separated by commas, e.g. "variable1,variable2"
+    # You can also use a plus sign ("+") to indicate a secondary grouping variable.
+    # If provided, points on dimension reduction graphs will be assigned different shapes by 
+    # secondary grouping variable. E.g.: "variable1+variable3,variable2" will
+    # create two graphs; the first one will have its points colored by variable1 and have shapes assigned by
+    # variable3, and the second graph will have its points colored by variable2.
+    compartment_vars:
+
+    # [Optional] The columns in the annotation to use for annotation in the heatmap.
+    # Separate multiple values with commas.
+    heatmap_ann_vars:
+  
+  # ----------------------------------------------------------------------
+  #     InSituType cell-typing settings
+  # ----------------------------------------------------------------------
+  cell_typing:
+  
+    # [Required] [Character string] Path to the reference matrix (in CSV format) to use for cell typing.
+    # For more information on the correct format of the matrix, please see the documentation.
+    ref_matrix_file: /rsrch6/scratch/genomic_med/prime-tr/SpatialProcessing/bisant-cosmo/ext/IO_1k.profiles.csv
+    
+    # [Optional] [Integer] Lower bound for the number of clusters for unsupervised clustering.
+    # If not provided, will default to 5. 
+    n_clusts_lower_bound: 5
+    
+    # [Optional] [Integer] Upper bound for the number of clusters for unsupervised clustering. 
+    # If not provided, will default to 10.
+    n_clusts_upper_bound: 10
+    
+    # [Optional] [Integer] Subsample size for phase 1 (random starts) of cell typing.
+    # For a quick pass, a value in the ballpark of 200 is recommended.
+    # For a more thorough job, a value in the ballpark of 10000 is recommended.
+    # If not provided, will default to 200.
+    subsamp_size_1: 200
+    
+    # [Optional] [Integer] Subsample size for phase 1 (refining in a larger subset) of cell typing.
+    # For a quick pass, a value in the ballpark of 500 is recommended.
+    # For a more thorough job, a value in the ballpark of 20000 is recommended.
+    # If not provided, will default to 500.
+    subsamp_size_2: 500
+    
+    # [Optional] [Integer] Subsample size for phase 1 (refining in a larger subset) of cell typing.
+    # For a quick pass, a value in the ballpark of 2000 is recommended.
+    # For a more thorough job, a value in the ballpark of 1e+05 is recommended.
+    # If not provided, will default to 2000.
+    subsamp_size_3: 2000
+    
+    # [Optional] [Integer] Number of iterations for cell typing.
+    # The larger the value, the more thorough the job. Values around 10 are recommended for more thorough jobs.
+    # If not provided, will default to 1.
+    n_iterations: 1
+    
+    # [Optional] [Integer] Maximum number of iterations for cell typing. 
+    # The larger the value, the more thorough the job. Values around 40 are recommended for more thorough jobs.
+    # If not provided, will default to 5.
+    max_iterations: 5 
+    
+    # [Optional] [Integer] The number of cells to downsample to when performing marker identification after clustering.
+    # Downsampling allows the computations to run faster. 
+    # Input a negative value to force the algorithm to use all cells when identifying cluster markers (not recommended unless you have a lot of time).
+    # If not provided, will default to 2000.
+    downsampling_celltyping: 2000
+    
+    # [Optional] [Numeric] Log fold-change threshold for identifying cell-type markers.
+    # If not provided, will default to 0.1. Per the FindAllMarkers() documentation, "Increasing logfc.threshold speeds up the function, but can miss weaker signals."
+    logfc_threshold: 0.1
+  
+  # ----------------------------------------------------------------------
+  #     Spatial niche settings
+  # ----------------------------------------------------------------------
+  spatial_niche:
+  
+    # [Optional] [Character] The name of the variable in the metadata indicating which tissue core a cell is from.
+    # If provided, the spatial nearest neighbor graph will be constructed within a given tissue core. 
+    # If not provided, the spatial nearest neighbor graph will be constructed within a given FOV.
+    tissue_core_var:
+    
+    # [Optional] [Character] The name(s) of the variable(s) in the metadata to export to a CSV for use in Napari.
+    # By default, `updated_cell_id` (an updated cell ID that includes an identifier for slide), the variable for FOV, the variable for tissue core (if provided), `InSituType_clusters` (indicating InSituType-assigned cell type), and `niche` (indicating InSituCore-assigned spatial niche) will be included, so you don't need to include these as well.
+    # Separate multiple values with a comma (",").
+    napari_vars: 
+  
+  # ----------------------------------------------------------------------
+  #     Differential expression
+  # ----------------------------------------------------------------------
+  differential_expression:
+
+    # [Required] The variables in the metadata to serve as fixed-effect variables (i.e., the variable for which you want to compare groups).
+    # Separate multiple variables with commas (",").
+    fixed_effect_vars: 
+    
+    # [Optional] [Numeric] Maximum distance in microns (μm) for two cells to be considered neighbors.
+    # Note that for CosMx, 1px = 0.12μm.
+    # If not provided, will default to 20.
+    neighbor_distance_de:
+    
+    # [Optional] [Numeric] Number of clusters, given as a proportion (i.e., between [0,1]) of the total number of cells.
+    # For example, a value of 0.25 will create (0.25 * total number of cells) clusters. 
+    # The higher the value, the more clusters. 
+    # If not provided, will default to 0.05.
+    k_prop_n: 
+    
+    # [Optional] [Character] Cell types for which to calculate neighbor expression.
+    # The values should be present in the `InSituType_clusters` column in the metadata
+    # so please consult the reference matrix you used for cell typing for appropriate values.
+    # If not provided, will default to "all", but !!!note that depending on how many cell types you have,
+    # this may take up a LOT of memory and may crash R.!!!
+    # Separate multiple values with a comma (",").
+    ref_cell_types: 
+
+    # [Optional] The column name(s) in the sample annotation (given by {sample_annotation_file}) corresponding to
+    # the variables you'd like to subset the data set by before running differential expression analysis.
+    # You can provide multiple variables, separated by commas (,).
+    # Each variable provided will be used to subset each of the experiments defined by the four variables above,
+    # so there will probably be unnecessary models built. That's OK; you can just ignore them.
+    # If you have a subsetting variable but also want to conduct a differential expression experiment
+    # WITHOUT subsetting, enter your subsetting variable(s), and add NA as another one. 
+    subset_vars:
+
+    # [Optional] Values of the above subset_vars to include when subsetting.
+    # For each variable in subset_vars above, separate the values of that variable with commas,
+    # and separate multiple variables with semi-colons (;). 
+    # So, if subset_var_levels_manual is not empty, then for each value of subset_vars, 
+    # the pipeline, _in addition to_ subsets by each level individually, will _also_
+    # do a subset consisting of only the subset_var_levels_manual values. 
+    # You can skip a subsetting variable by inputting NA.
+    subset_var_levels_manual: 
+
+    # [Optional] Percentile cutoff, expressed as a decimal, of the coefficient of variance (CV)
+    # to filter genes before running differential expression via linear mixed models.
+    # For example, if you enter 0.25, only genes with a CV >= the 25th percentile
+    # of genes by CV will be kept.
+    # This speeds up the time it takes to fit the linear mixed models.
+    # If left blank, all available genes will be used. 
+    cv_cutoff: 0.25
+
+    # [Optional] Number of top differentially expressed genes to label on the volcano plots.
+    # This number will be applied to either side of the plot, so if you enter 10,
+    # [up to] 20 genes will be labeled on the plot. 
+    n_top_genes: 15
+
+    # [Optional] Cutoff for differentially expressed genes for heatmap, 
+    # expressed as [maximum false discovery rate (FDR)],[minimum absolute log2 fold change (LFC)].
+    # For example, if you want as your DE genes only those genes with an FDR < 0.05 
+    # and an LFC > 1, you'd enter 0.05,1
+    # If only one value is provided, it will be treated as the FDR.
+    # If left blank, the FDR cutoff will be set to 0.25, 
+    # and the minimum absolute LFC will be set to 0.58.
+    de_genes_cutoffs:
+    
+  # ----------------------------------------------------------------------
+  #     Pathway analysis
+  # ----------------------------------------------------------------------
+  pathway_analysis:
+
+    # Pathway analysis is conducted using the FGSEA algorithm with pathways from mSigDB. 
+
+    # [Optional] Absolute path to a CSV, TSV, or Excel (.xlsx) file containing the 
+    # mSigDB pathway sets of interest. 
+    # The format of the file should be as follows: 
+    # The first column contains the main categories (e.g. "H" for hallmark gene sets,
+    # "C2" for curated gene sets, "C5" for ontology gene sets).
+    # The second column contains the subcategories (e.g. "CP:BIOCARTA" for the BioCarta subset
+    # of the canonical pathways [CP] within the C2 sets, or "GO:CC" for the Cellular Component 
+    # subset of the Gene Ontology [GO] gene sets within the C5 sets.)
+    # If a main category does not include subcategories (e.g. the hallmark gene sets), fill in
+    # "NA" (no quotation marks) as the value at the appropriate index in the second column.
+    # DO NOT INCLUDE COLUMN HEADERS.
+    # Here is an example using tab separators:
+    #
+    # H NA
+    # C2  CP:BIOCARTA
+    # C2  CP:REACTOME
+    # C3  CP:PID
+    # 
+    # For more information on available pathways, see https://www.gsea-msigdb.org/gsea/msigdb. 
+    # If left blank, the pipeline will automatically run FGSEA against ALL pathways in the 
+    # following pathway sets:
+    # H (hallmark pathways), C2:CP:BIOCARTA (BioCarta pathways), C2:CP:REACTOME (Reactome) pathways
+    pathway_table_file: 
+
+    # [Optional] Individual pathways to perform FGSEA against. 
+    # If provided, FGSEA will be run against ONLY these pathways.
+    # These pathways MUST be in the pathway sets listed in the table designated by pathway_table_file
+    # (or the default pathways if pathway_table_file is left blank). 
+    # Separate pathways with commas.
+    # E.g.: BIOCARTA_GPCR_PATHWAY,REACTOME_REGULATION_OF_HMOX1_EXPRESSION_AND_ACTIVITY,HALLMARK_HEDGEHOG_SIGNALING
+    individual_pathways:
+
+    # [Optional] The maximum number of pathways to display on the FGSEA bar graphs.
+    # The cutoff is determined by the pathway ranking score, which is given by 
+    #   pathway ranking score = -log10(adjusted p-value) * abs(normalized enrichment score)
+    # This value is optional, but highly recommended to use the default setting of 15.
+    n_max_pathways: 15
+  
+  # ----------------------------------------------------------------------
+  #     Spatial analysis
+  # ----------------------------------------------------------------------
+  spatial_analysis:
+  
+    # [Required] [Character string] The name of the variables in the metadata containing Cartesian (x-y) coordinates.
+    # Separate the names with a comma (,).
+    # We recommend "x_adj,y_adj", the adjusted coordinates created in the pre-DE module.
+    dimension_name_vars_sa: x_adj,y_adj
+    
+    # [Required] [Character string] The name of the variables in the metadata containing Cartesian (x-y) coordinates.
+    # Separate the names with a comma (,).
+    clin_data_cols: 
+    
+    # [Optional] Name of variable in metadata giving grouping by which to perform niche analysis.
+    # This will usually be something like cell type.
+    # If not given, will default to `InSituType_clusters`.
+    niche_cell_clust_var:
+    
+    # [Optional] How a cell's neighbors should be defined when performing niche analysis:
+    # `radius`: all cells within the provided radius
+    # `k`: The _k_ nearest cells, regardless of how far away they are
+    # If not given, will default to `radius`.
+    niche_neighbor_type:
+    
+    # [Required] The cutoff value corresponding to `niche_neighbor_type`; 
+    # if `niche_neighbor_type` is `radius`, then `niche_neighbor_cutoff` is the radius within which cells can be considered neighbors; the units of the radius will match those of the dimensions provided by `dimension_name_vars_sa`;
+    # if `niche_neighbor_type` is `k`, then `niche_neighbor_cutoff` is the number of closest cells that will be considered a given cell's neighbor
+    niche_neighbor_cutoff:
+    
+    # [Optional] The number of niches (k-means clusters) to cluster cells into, in a given FOV.
+    # If not provided, the pipeline will automatically determine the optimal number of niches for each FOV.
+    niche_k_means: 
+    
+    # [Optional] 
+    
+    # [Required] The cutoff value corresponding to `niche_neighbor_type`; 
+    # [Optional] Name of variable in metadata giving grouping by which to perform colocalization for bi- and univariate nearest neighbors G(r).
+    # This will usually be something like cell type.
+    # If not given, nearest neighbors G(r) will not be calculated.
+    coloc_cell_clust_var:
+    
+    # [Optional] Upper end of the range of radii to use in calculating summary functions for univariate nearest neighbors G(r).
+    # The units of this will be whatever units are used by the coordinates given by `dimension_name_vars` above.
+    # The lower end of the range will always be 0.
+    # If not given, univariate nearest neighbors G(r) will not be calculated.
+    uni_g_r_range_max:
+    
+    # [Optional] The number of permutations to use when calculating univariate nearest neighbors G(r).
+    # Increasing the number of permutations will increase the runtime.
+    # If not given, will be set to 100.
+    n_perm_uni_g:
+    
+    # [Optional] The cell types for which to calculate bivariate nearest neighbors G(r).
+    # The cell types given need to be values of the variable given by `bi_coloc_cell_clust_var`.
+    # You have two options for how to provide these values:
+    # 1) As a single vector; separate the elements of the vector with commas (`,`).
+    # All possible doublet combinations of the elements in the vector will be assessed. 
+    # For example, cell_type_A,cell_type_B,cell_type_C
+    # 2) As two vectors; separate the vectors with a semicolon (`;`)
+    # and the elements of the vectors with commas (`,`).
+    # All possible doublet combinations of the elements in the first vector × the elements in the second vector will be created.
+    # For example, cell_type_A,cell_type_B,cell_type_C;cell_type_D,cell_type_E,cell_type_F
+    # If not given, bivariate nearest neighbors G(r) for all possible doublet combinations of the cell types given by `bi_coloc_cell_clust_var` will be calculated.
+    # Please note that this may dramatically increase the runtime.
+    bi_g_cell_types: 
+    
+    # [Optional] Upper end of the range of radii to use in calculating summary functions for bivariate nearest neighbors G(r).
+    # The units of this will be whatever units are used by the coordinates given by `dimension_name_vars` above.
+    # The lower end of the range will always be 0.
+    # If not given, bivariate nearest neighbors G(r) will not be calculated.
+    bi_g_r_range_max:
+    
+    # [Optional] The number of permutations to use when calculating bivariate nearest neighbors G(r).
+    # Increasing the number of permutations will increase the runtime.
+    # If not given, will be set to 100.
+    n_perm_bi_g:
+    
+    # [Optional] The path to the CSV file containing the ligand-receptor interactions to be queried
+    # If not given, ligand-receptor analysis will not be performed
+    # Each row is one ligand-receptor interaction for one pair of cell types
+    # The columns should NOT be named in the input CSV file, as the pipeline will automatically assign column names
+    # The first column is the name of the receptor as given in the table linking receptors to TFs (usually `receptor_id` in `tf_input`, see below)
+    # The second column is the genes that make up the receptor; if the receptor is a monomer, simply enter the gene name (HGNC);
+    # if the receptor is a multimer, enter all the gene names (HGNC) that make up the complex, separated with a plus sign ("+")
+    # The third column is the genes that make up the ligand; if the ligand is a monomer, simply enter the gene name (HGNC);
+    # if the ligand is a multimer, enter all the gene names (HGNC) that make up the complex, separated with a plus sign ("+")
+    # The fourth column is the cell type of the receptor-expressing cell, where the cell types are given by the column in the metadata named by the value in the sixth column of this CSV file
+    # The fifth column is the cell type of the ligand-expressing cell, where the cell types are given by the column in the metadata named by the value in the sixth column of this CSV file
+    # The sixth column is the name of the column in the metadata containing the cell types, in which the values given in the fourth and fifth columns should be found. Each row can have a different value, i.e., use a different column from the metadata
+    # The seventh column is the radius (maximum distance) between two cells for those cells to be considered neighbors. The units will be the same as those of the x- and y-coordinates given by `dimension_name_vars`.
+    lr_interact_table_file: 
+    
+    # [Optional] The path to the file containing the receptor-TF interactions
+    # If not given, will default to the one found at "ext/.csv"
+    transcription_factor_input_file:
+    

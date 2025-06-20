@@ -1,0 +1,45 @@
+name: cosmx
+channels:
+  - conda-forge
+  - bioconda
+  - R
+  - tiledb
+dependencies: 
+  - bioconda::snakemake=8.27.1 # Snakemake, a workflow (pipeline) management system
+  - bioconda::bioconductor-biocneighbors=2.0.0 # BiocNeighbors, required by CellChat
+  - bioconda::bioconductor-fgsea # Fast GSEA
+  - bioconda::bioconductor-singlecellexperiment # S4 classes for single-cell data. Required by InSituType
+  - bioconda::bioconductor-sparsematrixstats # Summary statistics for rows and columns of sparse matrices. Required by InSituType
+  - bioconda::bioconductor-summarizedexperiment # A container (S4 class) for matrix-like assays. Required by InSituType
+  - conda-forge::python=3.11.3 # Python.
+  - conda-forge::leidenalg=0.10.2 # Leiden algorithm used in unsupervised clustering
+  - conda-forge::r-base=4.3.1 # R.
+  - conda-forge::r-biocmanager=1.30.25 # BiocManager, for installing and updating Bioconductor packages
+  - conda-forge::r-circlize=0.4.16 # For colorRamp2() function, used in helper functions for spatial analysis
+  - conda-forge::r-devtools=2.4.5 # For installing external R packages from GitHub etc
+  - conda-forge::r-emmeans=1.10.7 # Marginal means for linear, generalized linear, and mixed models
+  - conda-forge::r-factominer=2.11 # Exploratory data analysis with PCA
+  - conda-forge::r-factoextra=1.0.7 # Additional functions to support FactoMineR
+  - conda-forge::r-foreach=1.5.2 # Required by INLA
+  - conda-forge::r-furrr=0.3.1 # Parallelization
+  - conda-forge::r-glmmtmb=1.1.9 # Linear and generalized linear mixed models
+  - conda-forge::r-ggraph=2.2.1 # Co-occurrence and other network-specific graphs
+  - conda-forge::r-ggrastr=1.0.2 # Rasterize specific layers of ggplot, to keep size within reasonable limits
+  - conda-forge::r-harmony=1.2.3 # Batch-effect correction for single-cell data
+  - conda-forge::r-metafor # Meta-analysis of linear modeling results
+  - conda-forge::r-msigdbr=10.0.1 # Offline collection of mSigDB's pathways
+  - conda-forge::r-outliers=0.15 # Collection of tests commonly used for identifying outliers
+  - conda-forge::r-pheatmap=1.0.12 # Heatmap package used to create cell-type heatmaps
+  - conda-forge::r-r.utils=2.12.3 # To read gz and bz2 files directly, fread() requires 'R.utils' package
+  - conda-forge::r-readr=2.1.5 # Writing logs
+  - conda-forge::r-rfast=2.1.0 # Needed by InSituCor
+  - conda-forge::r-rcppgsl=0.3.13 # Needed by InSituCor
+  - conda-forge::r-rcppziggurat=0.1.6 # Needed by InSituCor
+  - conda-forge::r-rmarkdown=2.29 # Convert .Rmd (Rmarkdown) documents into a variety of formats (HTML, PDF, etc.)
+  - conda-forge::rstudio-desktop=2022.12.0 # RStudio for desktop work
+  - conda-forge::r-seurat=5.0.3 # Analysis of single-cell data
+  - conda-forge::r-spdep=1.3_7 # Required by smiDE
+  - conda-forge::r-tidyverse=2.0.0 # A "grammar" of data manipulation in R
+  - conda-forge::r-yaml=2.3.8 # Reading in YAML files
+  - dnachun::r-cellchat=2.1.2 # Inference of cell-cell communication
+  - r::r-regexpipes=0.0.1 # Pipe-friendly version of regex functions

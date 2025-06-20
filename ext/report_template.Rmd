@@ -1,0 +1,70 @@
+---
+output: 
+  epuRate::epurate:
+    toc: TRUE
+    number_sections: FALSE
+    code_folding: "hide"
+params:
+  qc_metrics_file: ''
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Getting arguments from the command line:
+# https://stackoverflow.com/questions/49904943/run-rmarkdown-with-arguments-on-the-command-line/76567366#76567366
+# https://bookdown.org/yihui/rmarkdown-cookbook/parameterized-reports.html#parameterized-reports
+
+# Dynamically building Rmd files:
+# https://stackoverflow.com/questions/62754099/dynamically-building-rmarkdown
+# https://stackoverflow.com/questions/21729415/generate-dynamic-r-markdown-blocks
+
+# Reading in external scripts into a chunk:
+# https://bookdown.org/yihui/rmarkdown-cookbook/option-code.html
+
+# How to do tabbed sections: 
+# https://epirhandbook.com/new_pages/rmarkdown.html
+
+# Embedding Shiny apps:
+# https://bookdown.org/yihui/rmarkdown/shiny-embedded.html
+```
+
+# Project summary
+
+# QC
+```{r}
+qc_metrics_df <- readRDS(params$qc_metrics_file)
+knitr::kable(qc_metrics_df)
+```
+NOTE: cells with infinite signal strength (due to 0 negative counts) were excluded from calculations for statistics involving signal strength.
+
+# PCA
+
+# Batch-effect correction
+
+# Neighbor networks
+
+# UMAP
+
+# Spatial analysis
+## Cell-type co-localization
+## Neighborhoods (cellular niches)
+## Cell-cell signaling (ligand-receptor interactions)
+## Pathway activity
+## Signaling-pathway spatial correlation
+
+# Methods
+## QC
+## Normalization
+## PCA
+## Batch-effect correction
+## Neighbor networks
+## UMAP
+## Cell typing
+## Spatial analysis
+## Differential expression analysis
+
+# Session info
+```{r}
+sessionInfo()
+```
