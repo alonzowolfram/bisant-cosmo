@@ -41,10 +41,10 @@ if(pre_qc_mode) {
 #
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-if("bacprobes" %in% names(seu.obj.raw@assays)) {
+if("bacprobes" %in% names(seu.obj@assays)) {
   
   # Step 1: Extract the counts matrix from the 'bacprobes' assay, if there even is one
-  bac_counts <- GetAssayData(seu.obj.raw, assay = "bacprobes", slot = "counts")
+  bac_counts <- GetAssayData(seu.obj, assay = "bacprobes", slot = "counts")
   
   if(!flagVariable(bacterial_probes_histogram)) {
     if(any(bacterial_probes_histogram %in% rownames(bac_counts))) {
@@ -81,7 +81,7 @@ if("bacprobes" %in% names(seu.obj.raw@assays)) {
   )
   
   # Step 4: Add slide information from the Seurat object's metadata
-  bac_df$Run_Tissue_name <- seu.obj.raw@meta.data[["Run_Tissue_name"]]
+  bac_df$Run_Tissue_name <- seu.obj@meta.data[["Run_Tissue_name"]]
   
   # Step 5: Add measurements of central tendency and spread
   slide_stats <- bac_df %>%
