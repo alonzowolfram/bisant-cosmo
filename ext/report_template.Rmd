@@ -6,6 +6,7 @@ output:
     code_folding: "hide"
 params:
   qc_metrics_file: ''
+  bac_probe_stats_file: ''
 ---
 
 ```{r setup, include=FALSE}
@@ -32,11 +33,25 @@ knitr::opts_chunk$set(echo = TRUE)
 # Project summary
 
 # QC
-```{r}
+## QC metrics
+```{r qcMetrics}
 qc_metrics_df <- readRDS(params$qc_metrics_file)
 knitr::kable(qc_metrics_df)
 ```
 NOTE: cells with infinite signal strength (due to 0 negative counts) were excluded from calculations for statistics involving signal strength.
+
+## Bacterial probes
+```{r bacProbesPlotTable, echo=FALSE, results='asis'}
+bac_probes_list <- readRDS(params$bac_probe_stats_file)
+if(!is.null(bacterial_counts_list[["plot"]])) print(bacterial_counts_list[["plot"]])
+if(!is.null(bacterial_counts_list[["table"]])) knitr::kable(bacterial_counts_list[["table"]])
+
+```
+
+```{r bacProbesProbeList, results='asis'}
+if(!is.null(bacterial_counts_list[["probes"]])) print(paste0("The following probes were designated as bacterial probes: ", paste(bacterial_counts_list[["probes"]], collapse = ", ")))
+
+```
 
 # PCA
 

@@ -35,7 +35,9 @@ message(paste0("Rendering HTML report using the template found at ", rmd_templat
 # saveRDS(iris, paste0(output_dir_pubs, "test.rds"))
 # Set the paths.
 qc_metrics_path <- paste0(output_dir_rdata, "qc_metrics.rds")
+bac_probe_stats_path <- paste0(output_dir_rdata, "bac-probe_stats.rds")
 # Render.
 rmarkdown::render(rmd_template_file,
                   output_file=paste0(output_dir_pubs, "report.html"),
-                  params=list(qc_metrics_file=qc_metrics_path))
+                  params=list(qc_metrics_file=qc_metrics_path,
+                              bac_probe_stats_file=bac_probe_stats_path))

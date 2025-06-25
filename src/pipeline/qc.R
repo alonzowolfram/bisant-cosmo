@@ -326,7 +326,9 @@ for(slide_name in slide_names) {
     length(fov_qc_res$flaggedfovs) / length(unique(fov))
     # user  system elapsed 
     # 82.884  13.316  72.550 
-    mapFlaggedFOVs(fov_qc_res)
+    
+    # Map the flagged FOVs
+    # mapFlaggedFOVs(fov_qc_res)
     
     # Unique identifiers of flagged FOVs.
     flagged_fov_unique_ids <- c(flagged_fov_unique_ids, fov_qc_res$flaggedfovs)
