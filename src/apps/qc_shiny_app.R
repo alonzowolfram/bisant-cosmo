@@ -632,14 +632,20 @@ ui <- fluidPage(
       uiOutput("dynamicInputs"),
       
       # Input value display
-      verbatimTextOutput("inputValues")
+      verbatimTextOutput("inputValues"),
+      
+      # Download button for cutoff values
+      downloadButton("download_yaml", "Download QC config (YAML)")
     ),
     mainPanel(
       # Dynamically generated histogram tabs
       withSpinner(uiOutput("histogramTabs")),
       
       # QC summary table
-      withSpinner(DTOutput("flaggedTable"))
+      withSpinner(DTOutput("flaggedTable")),
+      
+      # Download button for the QC summary table
+      downloadButton("download_flagged_table", "Download flagged cell counts (CSV)")
     )
   )
   ,
@@ -819,8 +825,7 @@ server <- function(input, output, session) {
   # }) # End `observe()`.
   
   ## Flagged cell calculation ----
-  output$flaggedTable <- renderDT({
-    # cell_stats <- readRDS("Rdata/flagged_metadata_raw.rds")
+  flagged_table_data <- reactive({
     flagged_matrix <- sapply(1:nrow(config), function(i) {
       stat <- config$name[i]
       metadata_name <- config$metadata_name[i]
@@ -837,10 +842,47 @@ server <- function(input, output, session) {
     total_passed <- nrow(cell_stats) - total_flagged
     results <- data.frame(
       Stat = c(config$displayname, "Total Flagged", "Total Passed", "All cells"),
-      `Flagged count` = c(flagged_counts, total_flagged, total_passed, nrow(cell_stats))
+      FlaggedCount = c(flagged_counts, total_flagged, total_passed, nrow(cell_stats))
     )
-    datatable(results, options = list(pageLength = 10))
+    return(results)
   })
+  
+  ## Render flagged cell data table ----
+  # (Previously Flagged cell calculation)
+  output$flaggedTable <- renderDT({
+    datatable(flagged_table_data(), options = list(pageLength = 10))
+  })
+  # output$flaggedTable <- renderDT({
+  #   flagged_matrix <- sapply(1:nrow(config), function(i) {
+  #     stat <- config$name[i]
+  #     metadata_name <- config$metadata_name[i]
+  #     cutoff <- input[[paste0(stat, "_numeric")]]
+  #     is_minimum <- config$flag_as_minimum[i]
+  #     if (is_minimum) {
+  #       cell_stats[[metadata_name]] < cutoff
+  #     } else {
+  #       cell_stats[[metadata_name]] > cutoff
+  #     }
+  #   })
+  #   flagged_counts <- colSums(flagged_matrix)
+  #   total_flagged <- sum(rowSums(flagged_matrix) > 0)
+  #   total_passed <- nrow(cell_stats) - total_flagged
+  #   results <- data.frame(
+  #     Stat = c(config$displayname, "Total Flagged", "Total Passed", "All cells"),
+  #     `Number of flagged cells` = c(flagged_counts, total_flagged, total_passed, nrow(cell_stats))
+  #   )
+  #   datatable(results, options = list(pageLength = 10))
+  # })
+  
+  ## Download handler for flagged cell data table ----
+  output$download_flagged_table <- downloadHandler(
+    filename = function() {
+      paste0("flagged_cell_counts_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      write.csv(flagged_table_data(), file, row.names = FALSE)
+    }
+  )
   
   ## Histogram tab generation ----
   output$histogramTabs <- renderUI({
@@ -883,6 +925,25 @@ server <- function(input, output, session) {
       }) # End of local()
     }
   })
+  
+  ## QC configuration download ----
+  output$download_yaml <- downloadHandler(
+    filename = function() {
+      paste0("cosmx_qc_inputs_", Sys.Date(), ".yaml")
+    },
+    content = function(file) {
+      # Create a named list of all the current input values for Cell QC
+      qc_inputs <- setNames(
+        lapply(config$name, function(stat) {
+          input[[paste0(stat, "_numeric")]]
+        }),
+        config$name
+      )
+      
+      # Write to YAML
+      yaml::write_yaml(qc_inputs, file)
+    }
+  )
   
   ## Counts-in-space scatter plot rendering ----
   # Use reactive expressions to store filtered data instead of recalculating everything inside renderPlot():
