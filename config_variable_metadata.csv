@@ -27,6 +27,7 @@ filter_cells,FALSE,TRUE,FALSE
 filter_fovs,FALSE,TRUE,FALSE
 filter_neg_probes,FALSE,FALSE,FALSE
 filter_targets,FALSE,FALSE,FALSE
+bacterial_probes_histogram,FALSE,,TRUE
 min_counts_per_cell,FALSE,200,FALSE
 min_features_per_cell,FALSE,200,FALSE
 proportion_neg_counts,FALSE,0.1,FALSE
