@@ -49,6 +49,7 @@ if(!is.null(bacterial_counts_list[["table"]])) knitr::kable(bacterial_counts_lis
 ```
 
 ```{r bacProbesProbeList, results='asis'}
+# https://stackoverflow.com/questions/44670712/knitr-print-text-from-code-block-as-r-markdown/44671368
 if(!is.null(bacterial_counts_list[["probes"]])) print(paste0("The following probes were designated as bacterial probes: ", paste(bacterial_counts_list[["probes"]], collapse = ", ")))
 
 ```
