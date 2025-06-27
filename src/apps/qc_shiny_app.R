@@ -518,7 +518,7 @@ config_expt <- file_info %>%
   dplyr::filter(type=="file" & base::grepl("config_", path)) %>%
   dplyr::arrange((desc(change_time))) %>% # change_time instead of birth_time because ... why is the birth_time off??
   dplyr::select(path) %>% unlist
-config_expt <- yaml::read_yaml(config_expt)
+config_expt <- yaml::read_yaml(config_expt[1])
 # config_env <- assignVarsEnv(config_expt)
 slide_name_var <- config_expt$experiment$annotation$slide_name_var
 
