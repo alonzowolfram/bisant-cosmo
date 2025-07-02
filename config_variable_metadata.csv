@@ -2,6 +2,7 @@ variable,required,default_value,split_string
 project_name,FALSE,,FALSE
 run_name,FALSE,,FALSE
 path_to_python,TRUE,,FALSE
+path_to_scratch,TRUE,,FALSE
 flat_file_dir,TRUE,,FALSE
 run_summaries_dir,TRUE,,FALSE
 bacterial_probes,FALSE,,TRUE
@@ -70,6 +71,7 @@ n_iterations,FALSE,1,FALSE
 max_iterations,FALSE,5,FALSE
 downsampling_celltyping,FALSE,2000,FALSE
 logfc_threshold,FALSE,0.1,FALSE
+n_chunks,FALSE,100,FALSE
 tissue_core_var,FALSE,,FALSE
 napari_vars,FALSE,,TRUE
 fixed_effect_vars,TRUE,,TRUE

@@ -468,6 +468,10 @@ experiment:
     # [Optional] [Numeric] Log fold-change threshold for identifying cell-type markers.
     # If not provided, will default to 0.1. Per the FindAllMarkers() documentation, "Increasing logfc.threshold speeds up the function, but can miss weaker signals."
     logfc_threshold: 0.1
+    
+    # [Optional] [Numeric] Number of chunks to split data set into for speed when performing cell typing.
+    # If not provided, will default to 100.
+    n_chunks: 100
   
   # ----------------------------------------------------------------------
   #     Spatial niche settings
