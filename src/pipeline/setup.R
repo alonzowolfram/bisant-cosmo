@@ -224,6 +224,7 @@ if(workflow_system == "Nextflow") {
   output_dir <- ""
   output_dir_config <- ""
   output_dir_logs <- ""
+  output_dir_logs_ct <- ""
   output_dir_rdata <- ""
   output_dir_tabular <- ""
   output_dir_pubs <- ""
@@ -242,6 +243,10 @@ if(workflow_system == "Nextflow") {
   output_dir_rdata <- paste0(output_dir, "Rdata/")
   output_dir_tabular <- paste0(output_dir, "tabular/")
   output_dir_pubs <- paste0(output_dir, "pubs/")
+  
+  ### Create the subdir in `logs/` for cell typing
+  output_dir_logs_ct <- paste0(output_dir_logs, "cell_typing/")
+  if(!dir.exists(output_dir_logs_ct)) dir.create(output_dir_logs_ct)
 }
 
 rdata_folder <- ifelse(workflow_system=="Nextflow", "", "Rdata/")
