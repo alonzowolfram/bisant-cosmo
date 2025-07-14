@@ -6,9 +6,10 @@ channels:
   - tiledb
 dependencies: 
   - bioconda::snakemake=8.27.1 # Snakemake, a workflow (pipeline) management system
-  - bioconda::bioconductor-biocneighbors=2.0.0 # BiocNeighbors, required by CellChat
+  - bioconda::bioconductor-biocneighbors # BiocNeighbors, required by CellChat
   - bioconda::bioconductor-fgsea # Fast GSEA
   - bioconda::bioconductor-singlecellexperiment # S4 classes for single-cell data. Required by InSituType
+  - bioconda::sopa=2.1.0 # Cell segmentation
   - bioconda::bioconductor-sparsematrixstats # Summary statistics for rows and columns of sparse matrices. Required by InSituType
   - bioconda::bioconductor-summarizedexperiment # A container (S4 class) for matrix-like assays. Required by InSituType
   - conda-forge::python=3.11.3 # Python.
