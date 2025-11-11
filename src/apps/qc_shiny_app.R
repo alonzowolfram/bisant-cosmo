@@ -516,7 +516,7 @@ file_info <- dir_info("config")
 # Sort by creation time and filter to include only config files
 config_expt <- file_info %>%
   dplyr::filter(type=="file" & base::grepl("config_", path)) %>%
-  dplyr::arrange((desc(change_time))) %>% # change_time instead of birth_time because ... why is the birth_time off??
+  dplyr::arrange((dplyr::desc(change_time))) %>% # change_time instead of birth_time because ... why is the birth_time off??
   dplyr::select(path) %>% unlist
 config_expt <- yaml::read_yaml(config_expt[1])
 # config_env <- assignVarsEnv(config_expt)
